@@ -141,6 +141,11 @@ dialog .actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
   #printDoc tr.grand td{background:#1f3864!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:700}
   #printDoc .brk{page-break-before:always}
   #printDoc .mark{color:#9a6b00}
+  #printDoc.bw th{background:#fff!important;color:#000!important;border-bottom:1.5px solid #000;border-top:1.5px solid #000}
+  #printDoc.bw td{border-top:1px solid #000}
+  #printDoc.bw tr.sec td{background:#fff!important;color:#000}
+  #printDoc.bw tr.grand td{background:#fff!important;color:#000!important;border-top:1.5px solid #000;border-bottom:3px double #000}
+  #printDoc.bw .mark{color:#000}
 }
 </style>
 </head>
@@ -626,7 +631,7 @@ function renderExList(){
 }
 let CUR = null;
 const PO_KEY = 'estimateBuilder.printOpts';
-const printOpts = Object.assign({hideZero:true, marks:false, orient:'portrait', content:'together'}, store.get(PO_KEY) || {});
+const printOpts = Object.assign({hideZero:true, marks:false, orient:'portrait', content:'together', colour:'colour'}, store.get(PO_KEY) || {});
 function savePO(){ store.set(PO_KEY, printOpts); }
 function openExtract(id){
   CUR = EX.find(e => e.id === id); if (!CUR) return;
@@ -655,6 +660,7 @@ function renderExEditor(){
     <div class="card"><h3>Print options</h3><div class="field opts">
       <label>Page ${sel('orient', [['portrait','Portrait'],['landscape','Landscape']])}</label>
       <label>Content ${sel('content', [['together','BOQ + Summary in one document'],['separate','BOQ and Summary as separate documents'],['boq','BOQ only'],['summary','Summary only']])}</label>
+      <label>Colour ${sel('colour', [['colour','Colour'],['bw','Black & white']])}</label>
       <label><input type="checkbox" data-opt="hideZero" ${printOpts.hideZero?'checked':''}> Hide lines and sections worth ₦0</label>
       <label><input type="checkbox" data-opt="marks" ${printOpts.marks?'checked':''}> Mark adjusted / added lines with *</label>
     </div><div class="field muted" style="font-size:13px">Sections are never split across pages: if a section does not fit on the rest of a page, it starts on a new page. Only a section longer than a whole page continues over pages.</div></div>
@@ -782,20 +788,27 @@ function doPrint(part){
   else h = boqHTML(ex, M) + `<div class="brk">${summaryHTML(ex, M)}</div>`;
   $('#pageStyle').textContent = pageCSS();
   $('#printDoc').innerHTML = h;
+  $('#printDoc').classList.toggle('bw', printOpts.colour === 'bw');
   setTimeout(() => window.print(), 60);
 }
 
 /* ---------- PDF with smart section breaks ---------- */
 function pdfLib(){ return window.jspdf && window.jspdf.jsPDF; }
 function newDoc(){ return new (pdfLib())({unit:'pt', format:'a4', orientation: printOpts.orient}); }
-const P = {M:36, TOP:100, BOT:40, NAVY:[31,56,100], BAND:[230,236,246]};
+const P = {M:36, TOP:100, BOT:40};
+function PAL(){
+  return printOpts.colour === 'bw'
+    ? {head:255, headText:0, band:false, bandText:0, line:0, grand:false, grandText:0, quiet:0, mark:0, lw:0.5}
+    : {head:[31,56,100], headText:255, band:[230,236,246], bandText:[31,56,100], line:[210,214,222], grand:[31,56,100], grandText:255, quiet:110, mark:[150,100,0], lw:0.4};
+}
 function boqColumns(doc){
   const W = doc.internal.pageSize.getWidth() - 2*P.M, land = printOpts.orient === 'landscape';
   return {0:{cellWidth:land?40:30}, 2:{cellWidth:land?80:62}, 3:{halign:'right', cellWidth:land?70:50}, 4:{halign:'right', cellWidth:land?90:66}, 5:{halign:'right', cellWidth:land?110:82}};
 }
 function sectionTable(doc, ex, s, startY, showHead){
   const mk = printOpts.marks, pd = n => f0(n);
-  const body = [[{content:s.k, styles:{fillColor:P.BAND, fontStyle:'bold', textColor:P.NAVY}}, {content:s.t, colSpan:5, styles:{fillColor:P.BAND, fontStyle:'bold', textColor:P.NAVY}}]];
+  const C = PAL();
+  const body = [[{content:s.k, styles:{fillColor:C.band, fontStyle:'bold', textColor:C.bandText}}, {content:s.t, colSpan:5, styles:{fillColor:C.band, fontStyle:'bold', textColor:C.bandText}}]];
   s.lines.forEach(l => body.push([l.ref, (l.desc || '') + (mk && l.mark ? ' *' : ''), l.unit || '', fq(num(l.qty)), pd(num(l.rate)), pd(num(l.qty)*num(l.rate))]));
   body.push(['', {content:'Subtotal', colSpan:4}, pd(s.st.sub)]);
   body.push(['', {content:`Arch/Engr/Mgt fees (${pct(ex.fee)})`, colSpan:4}, pd(s.st.fee)]);
@@ -803,8 +816,8 @@ function sectionTable(doc, ex, s, startY, showHead){
   doc.autoTable({
     startY, margin:{left:P.M, right:P.M, top:P.TOP, bottom:P.BOT}, showHead,
     head:[['Ref','Description','Unit','Qty','Rate (N)','Amount (N)']], body, rowPageBreak:'avoid',
-    styles:{font:'helvetica', fontSize:8.8, cellPadding:3.2, lineColor:[210,214,222], lineWidth:0.4},
-    headStyles:{fillColor:P.NAVY, textColor:255, fontStyle:'bold'},
+    styles:{font:'helvetica', fontSize:8.8, cellPadding:3.2, lineColor:C.line, lineWidth:C.lw, textColor:20},
+    headStyles:{fillColor:C.head, textColor:C.headText, fontStyle:'bold'}, alternateRowStyles: C.band ? {} : {fillColor:false},
     columnStyles: boqColumns(doc),
     didParseCell: d => { if (d.section==='head' && d.column.index>=3) d.cell.styles.halign='right'; }
   });
@@ -825,7 +838,7 @@ function drawBOQ(doc, ex, M){
     y = sectionTable(doc, ex, s, y, top ? 'everyPage' : 'never') + 8;
     if (top === false && m.pages > 1) {} // not reachable: long sections always start at the top
   });
-  if (printOpts.marks){ doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(150,100,0); if (y + 14 > limit){ doc.addPage(); y = P.TOP; } doc.text('* adjusted or added manually', P.M, y + 6); doc.setTextColor(0); }
+  if (printOpts.marks){ doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(PAL().mark); if (y + 14 > limit){ doc.addPage(); y = P.TOP; } doc.text('* adjusted or added manually', P.M, y + 6); doc.setTextColor(0); }
   return [startPage, doc.internal.getNumberOfPages()];
 }
 function drawSummary(doc, ex, M){
@@ -833,12 +846,13 @@ function drawSummary(doc, ex, M){
   const body = M.secs.map(s => [s.k, s.t, f0(s.st.total)]);
   body.push(['', {content:'Sum of sections', styles:{fontStyle:'bold'}}, {content:f0(t.sum), styles:{fontStyle:'bold'}}]);
   if (t.contAmt) body.push(['', `Contingency (${pct(ex.cont)})`, f0(t.contAmt)]);
-  body.push([{content:'', styles:{fillColor:P.NAVY}}, {content:'GRAND TOTAL', styles:{fillColor:P.NAVY, textColor:255, fontStyle:'bold'}}, {content:'N ' + f0(t.grand), styles:{fillColor:P.NAVY, textColor:255, fontStyle:'bold'}}]);
+  const C = PAL();
+  body.push([{content:'', styles:{fillColor:C.grand}}, {content:'GRAND TOTAL', styles:{fillColor:C.grand, textColor:C.grandText, fontStyle:'bold', fontSize:11}}, {content:'N ' + f0(t.grand), styles:{fillColor:C.grand, textColor:C.grandText, fontStyle:'bold', fontSize:11}}]);
   doc.autoTable({
     startY:P.TOP, margin:{left:P.M, right:P.M, top:P.TOP, bottom:P.BOT},
     head:[['Ref','Section','Amount (N)']], body, rowPageBreak:'avoid',
-    styles:{font:'helvetica', fontSize:10, cellPadding:5, lineColor:[210,214,222], lineWidth:0.4},
-    headStyles:{fillColor:P.NAVY, textColor:255},
+    styles:{font:'helvetica', fontSize:10, cellPadding:5, lineColor:C.line, lineWidth:C.lw, textColor:20},
+    headStyles:{fillColor:C.head, textColor:C.headText, fontStyle:'bold'}, alternateRowStyles: C.band ? {} : {fillColor:false},
     columnStyles:{0:{cellWidth:40}, 2:{halign:'right', cellWidth:140}},
     didParseCell: d => { if (d.section==='head' && d.column.index===2) d.cell.styles.halign='right'; }
   });
@@ -856,7 +870,7 @@ function decorate(doc, ex, ranges){
     doc.text(`Client: ${ex.client}    |    Prepared by: ${ex.prepared}    |    Date: ${ex.date}`, P.M, 60);
     doc.setLineWidth(1.2); doc.line(P.M, 68, W - P.M, 68);
     doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.text(title + cont, P.M, 86);
-    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(PAL().quiet);
     doc.text(ex.name || '', P.M, H - 18); doc.text(`Page ${i} of ${n}`, W - P.M, H - 18, {align:'right'});
   }
 }
