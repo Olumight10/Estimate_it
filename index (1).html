@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3864">
+<title>Estimate Builder</title>
+<style id="pageStyle">@page{size:A4 portrait;margin:12mm}</style>
+<style>
+:root{
+  --navy:#1f3864; --navy-2:#2c4a80; --ink:#1c2230; --muted:#5d6678; --line:#dde2ea; --soft:#f4f6fa;
+  --band:#e6ecf6; --paper:#ffffff; --bg:#eef1f6; --good:#1e7b45; --good-bg:#e3f4ea; --bad:#b42318; --bad-bg:#fde8e6;
+  --edit:#fff4d6; --edit-line:#e3b341; --blue:#1d4ed8; --radius:10px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+header.app{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.bar{display:flex;align-items:center;gap:12px;padding:10px 16px;max-width:1200px;margin:0 auto}
+.brand{font-weight:700;letter-spacing:.2px;white-space:nowrap}
+.brand small{display:block;font-weight:400;opacity:.75;font-size:12px;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.total-badge{margin-left:auto;text-align:right;line-height:1.15}
+.total-badge .lbl{font-size:11px;opacity:.75;text-transform:uppercase;letter-spacing:.6px}
+.total-badge .val{font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
+.menu-btn{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:8px;padding:8px 10px;cursor:pointer}
+nav.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;max-width:1200px;margin:0 auto;padding:0 8px}
+nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{background:none;border:0;color:rgba(255,255,255,.75);padding:10px 12px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav.tabs button.on{color:#fff;border-bottom-color:#9cc0ff;font-weight:600}
+main{max-width:1200px;margin:0 auto;padding:16px}
+.page{display:none}.page.on{display:block}
+h2{font-size:20px;margin:4px 0 4px}
+.lead{color:var(--muted);margin:0 0 14px;font-size:14px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:14px;overflow:hidden}
+.card>h3{margin:0;padding:10px 14px;background:var(--band);font-size:14px;letter-spacing:.3px;text-transform:uppercase;color:var(--navy)}
+.grid-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:0}
+.field{padding:10px 14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+.field label{font-size:13px;color:var(--muted)}
+.field .row{display:flex;align-items:center;gap:8px}
+.bsel{flex:1;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--blue);font-weight:700}
+.field input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--blue);font-weight:600}
+.field input:focus,.cell-in:focus{outline:2px solid #9cc0ff;border-color:#9cc0ff}
+.unit{color:var(--muted);font-size:13px;min-width:44px}
+.src{font-size:11.5px;color:#8a92a3}
+.src.picked{color:#9a6b00}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:600;color:var(--ink)}
+.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.search{flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:7px 10px;border-top:1px solid var(--line);vertical-align:top}
+th{background:var(--navy);color:#fff;font-weight:600;font-size:13px;text-align:left;border-top:0}
+th.num{text-align:right}
+.scroll{overflow-x:auto}
+tr.sec td{background:var(--band);font-weight:700;color:var(--navy)}
+tr.sub td{font-weight:600}
+tr.tot td{background:var(--soft);font-weight:700;border-bottom:2px solid var(--ink)}
+tr.grand td{background:var(--navy);color:#fff;font-weight:700;font-size:16px}
+.how{color:var(--muted);font-size:12.5px}
+.muted{color:var(--muted)}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--muted)}
+.rate-in{width:120px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;text-align:right;color:var(--blue);font-weight:600}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:700}
+.pill.pass{background:var(--good-bg);color:var(--good)}
+.pill.fail{background:var(--bad-bg);color:var(--bad)}
+.checks li{display:flex;gap:10px;align-items:flex-start;padding:8px 14px;border-top:1px solid var(--line);list-style:none}
+.checks{margin:0;padding:0}
+.checks .fix{font-size:12.5px;color:var(--muted)}
+.ex-list .item{display:flex;gap:12px;align-items:center;padding:12px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.ex-list .item .meta{flex:1;min-width:200px}
+.ex-list .item .meta b{display:block}
+.empty{padding:18px 14px;color:var(--muted)}
+/* extract editor */
+.ex-head{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0}
+.cell-in{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;text-align:right;background:#fff;color:var(--ink);font-variant-numeric:tabular-nums}
+.cell-in.changed{background:var(--edit);border-color:var(--edit-line)}
+.ex-table td{vertical-align:middle}
+.ex-table .w-qty{width:110px}.ex-table .w-rate{width:130px}
+.was{display:block;font-size:11px;color:#9a6b00;text-align:right}
+.icon-btn{border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px 7px;border-radius:6px}
+.icon-btn:hover{background:var(--soft)}
+.icon-btn.del:hover{color:var(--bad);background:var(--bad-bg)}
+.ex-table td.x{white-space:nowrap;text-align:right}
+.btn.small{padding:5px 10px;font-size:13px}
+.cell-in.txt{text-align:left}
+.cell-in.added{background:#e8f6ee;border-color:#8fd0aa}
+tr.addrow td{border-top:1px dashed var(--line)}
+.opts select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;margin-left:4px}
+.notice{background:var(--edit);border:1px solid var(--edit-line);border-radius:8px;padding:10px 12px;font-size:13.5px;margin-bottom:12px}
+.field.opts{flex-direction:row;flex-wrap:wrap;gap:10px 18px;align-items:center;font-size:14px}
+.ex-table .ref{display:none}
+.opts label{display:flex;gap:6px;align-items:center}
+dialog{border:0;border-radius:12px;padding:0;max-width:440px;width:calc(100% - 32px);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog .dlg{padding:18px}
+dialog h3{margin:0 0 8px}
+dialog .actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1c2230;color:#fff;padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+.toast.on{opacity:1}
+@media (max-width:720px){
+  main{padding:12px}
+  .hide-sm{display:none}
+  th,td{padding:6px 7px;font-size:13.5px}
+  .ex-table thead{display:none}
+  .ex-table tr.line{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;padding:10px 4px;border-top:1px solid var(--line)}
+  .ex-table tr.line td{border:0;padding:0}
+  .ex-table tr.line td.d{grid-column:1/-1;font-weight:600}
+  .ex-table tr.line td.d .ref{display:inline;color:var(--muted);font-weight:400;margin-right:6px}
+  .ex-table tr.line td.u{display:none}
+  .ex-table tr.line td.q::before{content:"Qty";display:block;font-size:11px;color:var(--muted)}
+  .ex-table tr.line td.r::before{content:"Rate";display:block;font-size:11px;color:var(--muted)}
+  .ex-table tr.line td.a{grid-column:1/-1;text-align:right;font-weight:700}
+  .ex-table tr.line td.x{grid-column:1/-1;text-align:right}
+  .ex-table tr.addrow{display:block;padding:8px 4px}
+  .ex-table tr.addrow td{display:block;border:0;padding:0}
+  .ex-table .w-qty,.ex-table .w-rate{width:auto}
+  .ex-table tr.sec,.ex-table tr.sub,.ex-table tr.tot{display:flex;justify-content:space-between}
+  .ex-table tr.sec td,.ex-table tr.sub td,.ex-table tr.tot td{border:0}
+  .ex-table tr.sec td:empty,.ex-table tr.sub td:empty,.ex-table tr.tot td:empty{display:none}
+}
+/* print document */
+#printDoc{display:none}
+@media print{
+  body{background:#fff}
+  header.app,main,.toast,dialog{display:none!important}
+  #printDoc{display:block;color:#000;font-size:10.5pt}
+  #printDoc h1{font-size:15pt;margin:0}
+  #printDoc .ph{border-bottom:2px solid #000;padding-bottom:6px;margin-bottom:10px}
+  #printDoc .ph div{font-size:10pt}
+  #printDoc table{width:100%;border-collapse:collapse;page-break-inside:auto}
+  #printDoc th{background:#1f3864!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:4px 6px;font-size:9.5pt}
+  #printDoc td{padding:3px 6px;border-top:1px solid #ccc;font-size:9.5pt}
+  #printDoc tr{page-break-inside:avoid}
+  #printDoc .sec-block{break-inside:avoid;page-break-inside:avoid;margin-bottom:6px}
+  #printDoc h2.dt{font-size:12.5pt;margin:4px 0 8px}
+  #printDoc .sec-block thead{display:table-header-group}
+  #printDoc tr.sec td{background:#e6ecf6!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:700}
+  #printDoc tr.tot td{font-weight:700;border-bottom:1.5px solid #000}
+  #printDoc tr.grand td{background:#1f3864!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-weight:700}
+  #printDoc .brk{page-break-before:always}
+  #printDoc .mark{color:#9a6b00}
+}
+</style>
+</head>
+<body>
+<header class="app">
+  <div class="bar">
+    <div class="brand">Estimate Builder<small id="hdrProject"></small></div>
+    <div class="total-badge"><div class="lbl">Grand total</div><div class="val" id="hdrTotal">-</div></div>
+    <button class="menu-btn" id="menuBtn" aria-label="Menu">&#8942;</button>
+  </div>
+  <nav class="tabs" id="tabs">
+    <button data-tab="inputs" class="on">Inputs</button>
+    <button data-tab="rates">Rates</button>
+    <button data-tab="assumptions">Assumptions</button>
+    <button data-tab="takeoff">Takeoff</button>
+    <button data-tab="boq">BOQ</button>
+    <button data-tab="summary">Summary</button>
+    <button data-tab="extracts">Extracts</button>
+  </nav>
+</header>
+
+<main>
+  <section class="page on" id="p-inputs">
+    <h2>Inputs</h2>
+    <p class="lead">Measurements from the drawings. Everything else calculates from these. Changes save automatically on this device.</p>
+    <div id="inputsForm"></div>
+  </section>
+
+  <section class="page" id="p-rates">
+    <h2>Rates</h2>
+    <p class="lead">One price per item. Change a price once and every BOQ line that uses it updates.</p>
+    <div class="toolbar"><input class="search" id="rateSearch" placeholder="Search rates (e.g. cement, 16mm, labour)"></div>
+    <div id="ratesForm"></div>
+  </section>
+
+  <section class="page" id="p-assumptions">
+    <h2>Assumptions</h2>
+    <p class="lead">Rules that turn measurements into quantities. Change only when you have a reason to.</p>
+    <div id="assumpForm"></div>
+  </section>
+
+  <section class="page" id="p-takeoff">
+    <h2>Takeoff</h2>
+    <p class="lead">Every quantity, calculated. Read-only.</p>
+    <div id="takeoffView"></div>
+  </section>
+
+  <section class="page" id="p-boq">
+    <h2>Bill of Quantities</h2>
+    <p class="lead">Live from the closed system: quantity (rounded up to whole units) &times; rate. Read-only. To adjust or print, make an extract.</p>
+    <div class="toolbar"><button class="btn primary" data-act="extract">Extract BOQ &amp; Summary</button></div>
+    <div id="boqView"></div>
+  </section>
+
+  <section class="page" id="p-summary">
+    <h2>Summary</h2>
+    <p class="lead">Section totals, fees, contingency and checks.</p>
+    <div class="toolbar"><button class="btn primary" data-act="extract">Extract BOQ &amp; Summary</button></div>
+    <div id="summaryView"></div>
+    <div class="card"><h3>Checks <span id="checkPill"></span></h3><ul class="checks" id="checksView"></ul></div>
+  </section>
+
+  <section class="page" id="p-extracts">
+    <div id="exListView">
+      <h2>Extracts</h2>
+      <p class="lead">An extract is a frozen copy of the BOQ and Summary. Edit its quantities and rates freely, then print or save as PDF. Edits stay in the extract; the live system never sees them.</p>
+      <div class="toolbar"><button class="btn primary" data-act="extract">New extract from current BOQ</button></div>
+      <div class="card ex-list" id="exList"></div>
+    </div>
+    <div id="exEditView" style="display:none"></div>
+  </section>
+</main>
+
+<div id="printDoc"></div>
+
+<dialog id="menuDlg"><div class="dlg">
+  <h3>Data on this device</h3>
+  <p class="muted" style="margin:0;font-size:14px">Your inputs, rates, assumptions and extracts are saved in this browser. To use them on another phone or PC, export a file here and import it there.</p>
+  <div class="actions">
+    <button class="btn" data-act="export">Export data file (.json)</button>
+    <button class="btn" data-act="import">Import data file</button>
+    <button class="btn danger" data-act="reset">Reset inputs, rates &amp; assumptions to defaults</button>
+    <button class="btn" data-act="close">Close</button>
+  </div>
+  <input type="file" id="importFile" accept=".json,application/json" hidden>
+</div></dialog>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+/* ===================================================== DEFAULTS (from Quote_updated.xlsx) */
+const DEFAULTS = {"Inputs": [{"key": "btype", "label": "Building type", "value": "one", "unit": "", "src": "", "group": "PROJECT"}, {"key": "proj", "label": "Project", "value": "Construction of one-storey building", "unit": null, "src": "Original title", "group": "PROJECT"}, {"key": "client", "label": "Client", "value": "Mr Chike Ezeoke", "unit": null, "src": "Original title", "group": "PROJECT"}, {"key": "prep", "label": "Prepared by", "value": "Chris Omoku", "unit": null, "src": "File name", "group": "PROJECT"}, {"key": "date", "label": "Estimate date", "value": "2026-10-28", "unit": null, "src": null, "group": "PROJECT"}, {"key": "fee", "label": "Arch/Engr/Mgt fee", "value": 0.1, "unit": "%", "src": "Original (5%)", "group": "PROJECT"}, {"key": "cont", "label": "Contingency", "value": 0, "unit": "%", "src": "Original (switched off)", "group": "PROJECT"}, {"key": "B_L", "label": "Wall length", "value": 200, "unit": "m", "src": "Original J3", "group": "FOUNDATION TO DPC"}, {"key": "B_N", "label": "Number of columns", "value": 20, "unit": "No.", "src": "Original J4", "group": "FOUNDATION TO DPC"}, {"key": "B_A", "label": "Building footprint area", "value": 250, "unit": "m2", "src": "Original J5", "group": "FOUNDATION TO DPC"}, {"key": "B_C", "label": "Block courses to DPC", "value": 5, "unit": "courses", "src": "Original J6", "group": "FOUNDATION TO DPC"}, {"key": "C_L", "label": "Wall length", "value": 180, "unit": "m", "src": "Original J44", "group": "GROUND FLOOR BLOCKWORK"}, {"key": "C_N", "label": "Number of columns", "value": 20, "unit": "No.", "src": "Original J45", "group": "GROUND FLOOR BLOCKWORK"}, {"key": "C_O", "label": "Openings needing lintels", "value": 40, "unit": "No.", "src": "Original J46", "group": "GROUND FLOOR BLOCKWORK"}, {"key": "C_C", "label": "Block courses to lintel", "value": 13, "unit": "courses", "src": "Original J47", "group": "GROUND FLOOR BLOCKWORK"}, {"key": "D_L", "label": "Beam length at deck level", "value": 170, "unit": "m", "src": "Original J74", "group": "FIRST DECK & STAIRS"}, {"key": "D_A", "label": "Deck floor area", "value": 250, "unit": "m2", "src": "Original J76", "group": "FIRST DECK & STAIRS"}, {"key": "E_L", "label": "Wall length", "value": 180, "unit": "m", "src": "Original J107", "group": "FIRST FLOOR BLOCKWORK"}, {"key": "E_N", "label": "Number of columns", "value": 20, "unit": "No.", "src": "Original J108", "group": "FIRST FLOOR BLOCKWORK"}, {"key": "E_O", "label": "Openings needing lintels", "value": 40, "unit": "No.", "src": "Original J109", "group": "FIRST FLOOR BLOCKWORK"}, {"key": "E_C", "label": "Block courses to lintel", "value": 13, "unit": "courses", "src": "Original J110", "group": "FIRST FLOOR BLOCKWORK"}, {"key": "D2_L", "label": "Beam length at deck level", "value": 170, "unit": "m", "src": "Picked - copied from the first floor; enter yours", "group": "SECOND DECK & STAIRS"}, {"key": "D2_A", "label": "Deck floor area", "value": 250, "unit": "m2", "src": "Picked - copied from the first floor; enter yours", "group": "SECOND DECK & STAIRS"}, {"key": "E2_L", "label": "Wall length", "value": 180, "unit": "m", "src": "Picked - copied from the first floor; enter yours", "group": "SECOND FLOOR BLOCKWORK"}, {"key": "E2_N", "label": "Number of columns", "value": 20, "unit": "No.", "src": "Picked - copied from the first floor; enter yours", "group": "SECOND FLOOR BLOCKWORK"}, {"key": "E2_O", "label": "Openings needing lintels", "value": 40, "unit": "No.", "src": "Picked - copied from the first floor; enter yours", "group": "SECOND FLOOR BLOCKWORK"}, {"key": "E2_C", "label": "Block courses to lintel", "value": 13, "unit": "courses", "src": "Picked - copied from the first floor; enter yours", "group": "SECOND FLOOR BLOCKWORK"}, {"key": "F_A", "label": "Roof plan area", "value": 250, "unit": "m2", "src": "Original J139", "group": "ROOFING"}, {"key": "F_P", "label": "Roof perimeter (for facia)", "value": 80, "unit": "m", "src": "Picked - original facia qty was blank", "group": "ROOFING"}, {"key": "G_A", "label": "Ceiling area", "value": 200, "unit": "m2", "src": "Original J165", "group": "CEILING"}, {"key": "G_POP", "label": "POP ceiling area", "value": 100, "unit": "m2", "src": "Picked - split of ceiling area; enter yours", "group": "CEILING"}, {"key": "G_PVC", "label": "PVC ceiling area", "value": 100, "unit": "m2", "src": "Picked - split of ceiling area; enter yours", "group": "CEILING"}, {"key": "H_W", "label": "Wall plaster area", "value": 1000, "unit": "m2", "src": "Original H186", "group": "PLASTERING & PAINTING"}, {"key": "I_PVC", "label": "Floor area finished in PVC (not tiled)", "value": 250, "unit": "m2", "src": "Original H203", "group": "TILING"}, {"key": "I_KW", "label": "Kitchen wall tiling", "value": 50, "unit": "m2", "src": "Original H205", "group": "TILING"}, {"key": "I_TW", "label": "Toilet wall tiling", "value": 150, "unit": "m2", "src": "Original H206", "group": "TILING"}, {"key": "J_D", "label": "Doors", "value": 20, "unit": "No.", "src": "Original B229", "group": "DOORS, WINDOWS & PLUMBING"}, {"key": "J_W", "label": "Windows", "value": 20, "unit": "No.", "src": "Original B230", "group": "DOORS, WINDOWS & PLUMBING"}, {"key": "J_WC", "label": "WC / bath sets", "value": 5, "unit": "set", "src": "Original B231", "group": "DOORS, WINDOWS & PLUMBING"}, {"key": "J_S", "label": "Septic tank and soakaway", "value": 1, "unit": "set", "src": "Original B232", "group": "DOORS, WINDOWS & PLUMBING"}], "Assumptions": [{"key": "s_ch", "label": "Structural mix: chipping", "value": 0.85, "unit": "t/m3", "src": "Original J10", "group": "Concrete mixes (per m3 of concrete)"}, {"key": "s_gr", "label": "Structural mix: gravel", "value": 0.2, "unit": "trip/m3", "src": "Original K10", "group": "Concrete mixes (per m3 of concrete)"}, {"key": "s_sa", "label": "Structural mix: sharp sand", "value": 0.1, "unit": "trip/m3", "src": "Original L10", "group": "Concrete mixes (per m3 of concrete)"}, {"key": "s_ce", "label": "Structural mix: cement", "value": 5, "unit": "bag/m3", "src": "Original M10", "group": "Concrete mixes (per m3 of concrete)"}, {"key": "b_gr", "label": "Blinding/DPC mix: gravel", "value": 0.36, "unit": "trip/m3", "src": "Original K12", "group": "Concrete mixes (per m3 of concrete)"}, {"key": "b_sa", "label": "Blinding/DPC mix: sharp sand", "value": 0.2, "unit": "trip/m3", "src": "Original L12", "group": "Concrete mixes (per m3 of concrete)"}, {"key": "b_ce", "label": "Blinding/DPC mix: cement", "value": 3.5, "unit": "bag/m3", "src": "Original M12", "group": "Concrete mixes (per m3 of concrete)"}, {"key": "bk_m", "label": "Blocks per metre per course", "value": 2.1, "unit": "No./m", "src": "Original L15", "group": "Blockwork"}, {"key": "bk_trip", "label": "Blocks laid per trip of mortar sand", "value": 700, "unit": "No./trip", "src": "Original L15", "group": "Blockwork"}, {"key": "bk_ce", "label": "Cement per trip of mortar sand", "value": 10, "unit": "bag/trip", "src": "Original M15", "group": "Blockwork"}, {"key": "pad", "label": "Column pad volume (1.1 x 1.1 x 0.25)", "value": 0.3025, "unit": "m3/pad", "src": "Original I10", "group": "Structural dimensions"}, {"key": "pad_l", "label": "Column pad length (deducted from strip footing)", "value": 1.1, "unit": "m", "src": "Original I12", "group": "Structural dimensions"}, {"key": "col_x", "label": "Column / lintel cross-section (0.15 x 0.3)", "value": 0.045, "unit": "m2", "src": "Original I11, I52, I53", "group": "Structural dimensions"}, {"key": "col_h0", "label": "Column height, pad to DPC", "value": 2, "unit": "m", "src": "Original I11", "group": "Structural dimensions"}, {"key": "col_h1", "label": "Column height per floor", "value": 4, "unit": "m", "src": "Original I52, I115", "group": "Structural dimensions"}, {"key": "lin_l", "label": "Lintel length per opening", "value": 2.5, "unit": "m", "src": "Original I53, I116", "group": "Structural dimensions"}, {"key": "strip_x", "label": "Strip footing cross-section (0.5 x 0.15)", "value": 0.075, "unit": "m2", "src": "Original I12", "group": "Structural dimensions"}, {"key": "dpc_t", "label": "DPC slab thickness", "value": 0.1, "unit": "m", "src": "Original I13", "group": "Structural dimensions"}, {"key": "deck_t", "label": "Deck slab thickness", "value": 0.12, "unit": "m", "src": "Original I81", "group": "Structural dimensions"}, {"key": "fill_d", "label": "Fill depth under floor", "value": 0.6, "unit": "m", "src": "Original I22", "group": "Structural dimensions"}, {"key": "fill_v", "label": "Volume per trip of fill sand", "value": 5, "unit": "m3/trip", "src": "Original I22", "group": "Structural dimensions"}, {"key": "rB16", "label": "Foundation: 16mm lengths per column", "value": 1, "unit": "length/col", "src": "From original typed 31 for 31 columns", "group": "Reinforcement"}, {"key": "rB12", "label": "Foundation: 12mm lengths per column", "value": 1.5, "unit": "length/col", "src": "Original J20", "group": "Reinforcement"}, {"key": "rB8", "label": "Foundation: 8mm stirrup lengths per column", "value": 1, "unit": "length/col", "src": "Original M20 (changed to 8mm)", "group": "Reinforcement"}, {"key": "rC16", "label": "Ground floor: 16mm lengths per column", "value": 2, "unit": "length/col", "src": "From original typed 65 for 31 columns", "group": "Reinforcement"}, {"key": "rF12", "label": "Floors: 12mm lengths per column", "value": 1.5, "unit": "length/col", "src": "Original I60, I123", "group": "Reinforcement"}, {"key": "rF8", "label": "Floors: 8mm lengths per column", "value": 1.5, "unit": "length/col", "src": "Original K60, K123", "group": "Reinforcement"}, {"key": "rF10", "label": "Floors: 10mm lengths per opening", "value": 0.5, "unit": "length/opening", "src": "Original M60, M123", "group": "Reinforcement"}, {"key": "rF6", "label": "Floors: 6mm lengths per opening", "value": 0.5, "unit": "length/opening", "src": "Original K61, K124 (same as 10mm)", "group": "Reinforcement"}, {"key": "d12", "label": "Deck: 12mm lengths per m of beam", "value": 0.666666666666667, "unit": "length/m", "src": "Original I90", "group": "Reinforcement"}, {"key": "d8", "label": "Deck: 8mm lengths per m of beam", "value": 0.4, "unit": "length/m", "src": "Original K91 (1 per 2.5 m)", "group": "Reinforcement"}, {"key": "d10", "label": "Deck: 10mm lengths per m2", "value": 0.5, "unit": "length/m2", "src": "Original M90", "group": "Reinforcement"}, {"key": "d16", "label": "Deck: 16mm lengths per m of beam", "value": 0.5, "unit": "length/m", "src": "Picked - 16mm added to the deck; check it", "group": "Reinforcement"}, {"key": "wire", "label": "Rod lengths tied per roll of binding wire", "value": 50, "unit": "length/roll", "src": "Picked - original priced wire as lump sums", "group": "Reinforcement"}, {"key": "fT", "label": "Foundation: timber lengths per m of wall (each size)", "value": 0.5, "unit": "length/m", "src": "From original typed 100 for 200 m", "group": "Formwork and timber"}, {"key": "peg", "label": "Foundation: metres of wall per bundle of pegs", "value": 30, "unit": "m/bundle", "src": "From original typed 7 for 200 m", "group": "Formwork and timber"}, {"key": "tF", "label": "Floors: timber lengths per column and per opening (each size)", "value": 2, "unit": "length", "src": "Original I63, K63", "group": "Formwork and timber"}, {"key": "d23", "label": "Deck: 2\"x3\" lengths per m2", "value": 1, "unit": "length/m2", "src": "Original I96", "group": "Formwork and timber"}, {"key": "dpl", "label": "Deck: planks per m2", "value": 1.5, "unit": "length/m2", "src": "Original K96", "group": "Formwork and timber"}, {"key": "dbam", "label": "Deck: bamboo props per m2", "value": 3, "unit": "No./m2", "src": "Original M96", "group": "Formwork and timber"}, {"key": "dpot", "label": "Deck: hollow pots per m2", "value": 7, "unit": "No./m2", "src": "Original J88", "group": "Formwork and timber"}, {"key": "nail", "label": "Timber lengths fixed per bag of nails", "value": 150, "unit": "length/bag", "src": "From original typed 2 bags for 288 lengths (ground floor)", "group": "Formwork and timber"}, {"key": "rf_sh", "label": "Roofing sheet area (slope + overhang)", "value": 2, "unit": "m2/m2", "src": "From original 890 m2 for 500 m2", "group": "Roofing (per m2 of roof plan)"}, {"key": "rf_6", "label": "6mm rods", "value": 0.08, "unit": "length/m2", "src": "From original 40 for 500 m2", "group": "Roofing (per m2 of roof plan)"}, {"key": "rf_34", "label": "3\"x4\"x12' timber", "value": 0.1, "unit": "length/m2", "src": "From original 50 for 500 m2", "group": "Roofing (per m2 of roof plan)"}, {"key": "rf_2418", "label": "2\"x4\"x18' timber", "value": 0.6, "unit": "length/m2", "src": "From original 300 for 500 m2", "group": "Roofing (per m2 of roof plan)"}, {"key": "rf_2412", "label": "2\"x4\"x12' timber", "value": 0.6, "unit": "length/m2", "src": "From original 300 for 500 m2", "group": "Roofing (per m2 of roof plan)"}, {"key": "rf_23", "label": "2\"x3\"x12' timber", "value": 2.14, "unit": "length/m2", "src": "From original 1,070 for 500 m2", "group": "Roofing (per m2 of roof plan)"}, {"key": "rf_scf", "label": "2\"x4\"x12' scaffold timber", "value": 0.8, "unit": "length/m2", "src": "From original 400 for 500 m2", "group": "Roofing (per m2 of roof plan)"}, {"key": "rf_nail", "label": "Nails", "value": 0.008, "unit": "bag/m2", "src": "From original 4 bags for 500 m2", "group": "Roofing (per m2 of roof plan)"}, {"key": "fac_l", "label": "Length of one facia board (12 ft)", "value": 3.66, "unit": "m", "src": "12 feet", "group": "Roofing (per m2 of roof plan)"}, {"key": "cl_23", "label": "2\"x3\"x12' timber", "value": 3.4, "unit": "length/m2", "src": "From original 679 for 200 m2", "group": "Ceiling (per m2 of ceiling)"}, {"key": "cl_bd", "label": "Ceiling board bundles", "value": 0.25, "unit": "No./m2", "src": "From original 50 for 200 m2", "group": "Ceiling (per m2 of ceiling)"}, {"key": "cl_nl", "label": "Nails", "value": 0.05, "unit": "bag/m2", "src": "From original 10 bags for 200 m2", "group": "Ceiling (per m2 of ceiling)"}, {"key": "cl_bt", "label": "Ceiling batten bundles", "value": 0.75, "unit": "bundle/m2", "src": "From original 150 for 200 m2", "group": "Ceiling (per m2 of ceiling)"}, {"key": "pl_ce", "label": "Cement", "value": 0.48, "unit": "bag/m2", "src": "From original 250 bags for 520 m2", "group": "Plastering and painting (per m2 of plaster)"}, {"key": "pl_sa", "label": "Plaster sand", "value": 0.02, "unit": "trip/m2", "src": "From original 10 trips for 520 m2", "group": "Plastering and painting (per m2 of plaster)"}, {"key": "pt_dr", "label": "Paint", "value": 0.135, "unit": "drum/m2", "src": "From original 70 drums for 520 m2", "group": "Plastering and painting (per m2 of plaster)"}, {"key": "tl_ce", "label": "Cement", "value": 0.265, "unit": "bag/m2", "src": "From original 180 bags for 680 m2", "group": "Tiling (per m2 tiled)"}, {"key": "tl_sa", "label": "Sharp sand", "value": 0.018, "unit": "trip/m2", "src": "From original 12 trips for 680 m2", "group": "Tiling (per m2 tiled)"}, {"key": "tl_w", "label": "Tile cutting waste", "value": 0.075, "unit": "%", "src": "From original 580 m2 ordered for 540 m2 floor", "group": "Tiling (per m2 tiled)"}], "Rates": [{"code": "P_CLEAR", "label": "Clear site", "unit": "item", "value": null, "src": "Picked - original had 3,000 typed outside the amount column", "group": "Preliminaries"}, {"code": "P_TANK", "label": "Construct water tank", "unit": "item", "value": null, "src": "Picked - not priced in original", "group": "Preliminaries"}, {"code": "P_BATCH", "label": "Construct batcher", "unit": "item", "value": null, "src": "Picked - not priced in original", "group": "Preliminaries"}, {"code": "P_SEC", "label": "Site security", "unit": "item", "value": null, "src": "Picked - not priced in original", "group": "Preliminaries"}, {"code": "P_TOOL", "label": "Wheelbarrows, headpans, shovels, etc", "unit": "item", "value": null, "src": "Original E13", "group": "Preliminaries"}, {"code": "P_APPR", "label": "Approvals and community expenses", "unit": "item", "value": null, "src": "Picked - not priced in original", "group": "Preliminaries"}, {"code": "CEM", "label": "Cement", "unit": "bag", "value": 13500, "src": "Original D17, D50, D209 (plastering had 3,600)", "group": "Materials"}, {"code": "SSAND", "label": "Sharp sand", "unit": "trip", "value": 80000, "src": "Original D18, D51, D210", "group": "Materials"}, {"code": "PSAND", "label": "Plaster sand", "unit": "trip", "value": 80000, "src": "Original D193", "group": "Materials"}, {"code": "GRAV", "label": "Gravel", "unit": "trip", "value": 80000, "src": "Original D19, D52, D82", "group": "Materials"}, {"code": "CHIP", "label": "Chipping", "unit": "tonne", "value": 35000, "src": "Original D20, D53", "group": "Materials"}, {"code": "FILL", "label": "Fill sand", "unit": "trip", "value": 80000, "src": "Original D22", "group": "Materials"}, {"code": "BLK9", "label": "9\" sandcrete block", "unit": "No.", "value": 900, "src": "Original D21", "group": "Materials"}, {"code": "BLK6", "label": "6\" sandcrete block", "unit": "No.", "value": 800, "src": "Original D54", "group": "Materials"}, {"code": "HPOT", "label": "Hollow deck block (pot)", "unit": "No.", "value": 1000, "src": "Picked - original 40 was an old price", "group": "Materials"}, {"code": "PEG", "label": "Bundle of pegs", "unit": "bundle", "value": 2000, "src": "Original D23", "group": "Materials"}, {"code": "T23", "label": "Timber 2\"x3\"x12'", "unit": "length", "value": 1000, "src": "Original D24, D55, D170 (roofing had 350)", "group": "Materials"}, {"code": "T112", "label": "Timber 1\"x12\"x12'", "unit": "length", "value": 3500, "src": "Original D25, D56", "group": "Materials"}, {"code": "T34", "label": "Timber 3\"x4\"x12'", "unit": "length", "value": 2500, "src": "Original D146", "group": "Materials"}, {"code": "T2418", "label": "Timber 2\"x4\"x18'", "unit": "length", "value": 3000, "src": "Original D147", "group": "Materials"}, {"code": "T2412", "label": "Timber 2\"x4\"x12'", "unit": "length", "value": 1500, "src": "Original D148 (scaffold line had 350)", "group": "Materials"}, {"code": "T110", "label": "Timber 1\"x10\"x12' facia", "unit": "length", "value": 4000, "src": "Original D150", "group": "Materials"}, {"code": "BAMB", "label": "Bamboo prop", "unit": "No.", "value": 1200, "src": "Picked - original 35 was an old price", "group": "Materials"}, {"code": "R16", "label": "16mm high tensile rod", "unit": "length", "value": 16500, "src": "Original D26 (Section C had 3,300)", "group": "Materials"}, {"code": "R12", "label": "12mm high tensile rod", "unit": "length", "value": 9500, "src": "Original D27, D59", "group": "Materials"}, {"code": "R10", "label": "10mm high tensile rod", "unit": "length", "value": 8500, "src": "Picked - original 430 was an old price", "group": "Materials"}, {"code": "R8", "label": "8mm mild steel rod", "unit": "length", "value": 4500, "src": "Original D28, D60", "group": "Materials"}, {"code": "R6", "label": "6mm mild steel rod", "unit": "length", "value": 3000, "src": "Original D61 (roofing had 350)", "group": "Materials"}, {"code": "NAIL", "label": "Nails", "unit": "bag", "value": 35000, "src": "Original D57, D151 (ceiling had 2,000)", "group": "Materials"}, {"code": "BWIRE", "label": "Binding wire", "unit": "roll", "value": 35000, "src": "Picked - original 2,000 was an old price", "group": "Materials"}, {"code": "SHEET", "label": "0.55 aluminium roofing sheet", "unit": "m2", "value": 15000, "src": "Original D153", "group": "Materials"}, {"code": "CEILB", "label": "Ceiling board bundle", "unit": "No.", "value": 15000, "src": "Original D171", "group": "Materials"}, {"code": "BATT", "label": "Ceiling batten", "unit": "bundle", "value": 600, "src": "Original D173", "group": "Materials"}, {"code": "WTILE", "label": "Wall tile", "unit": "m2", "value": 6000, "src": "Original D211", "group": "Materials"}, {"code": "FTILE", "label": "Ceramic floor tile", "unit": "m2", "value": 6000, "src": "Original D212", "group": "Materials"}, {"code": "DOOR", "label": "Door", "unit": "No.", "value": 100000, "src": "Original D229", "group": "Materials"}, {"code": "WIN", "label": "Aluminium window with protector", "unit": "No.", "value": 200000, "src": "Original D230", "group": "Materials"}, {"code": "WC", "label": "WC / bath / fittings", "unit": "set", "value": 100000, "src": "Original D231", "group": "Materials"}, {"code": "SEPT", "label": "Septic tank and soakaway", "unit": "set", "value": 1500000, "src": "Original E232", "group": "Materials"}, {"code": "PAINT", "label": "Paint", "unit": "drum", "value": 40000, "src": "Original D249", "group": "Materials"}, {"code": "SOL_R", "label": "Solignum to roof timbers", "unit": "m2 roof plan", "value": 1000, "src": "Original E152", "group": "Rates per m2 (supply and fix)"}, {"code": "SOL_C", "label": "Solignum to ceiling timbers", "unit": "m2 ceiling", "value": 1000, "src": "From original 60,000 for 200 m2", "group": "Rates per m2 (supply and fix)"}, {"code": "PVC_D", "label": "Electrical pipes and boxes in deck", "unit": "m2 deck", "value": 5000, "src": "Picked - original 150 was an old price", "group": "Rates per m2 (supply and fix)"}, {"code": "PVC_C", "label": "Electrical pipes and boxes in ceiling", "unit": "m2 ceiling", "value": 5000, "src": "From original 350,000 for 200 m2", "group": "Rates per m2 (supply and fix)"}, {"code": "CL_POP", "label": "POP ceiling (supply and fix)", "unit": "m2", "value": 20000, "src": "Your rate", "group": "Rates per m2 (supply and fix)"}, {"code": "CL_PVC", "label": "PVC ceiling (supply and fix)", "unit": "m2", "value": 8000, "src": "Your rate", "group": "Rates per m2 (supply and fix)"}, {"code": "ELEC", "label": "Electrical wiring and fittings", "unit": "m2 floor", "value": 15000, "src": "From original 5,000,000 for 660 m2 floor", "group": "Rates per m2 (supply and fix)"}, {"code": "L_PEG", "label": "Pegging / setting out", "unit": "item", "value": 100000, "src": "Original I25", "group": "Labour"}, {"code": "L_EXC", "label": "Excavation", "unit": "m of wall", "value": 3000, "src": "Original J25", "group": "Labour"}, {"code": "L_CARC", "label": "Foundation carpenter", "unit": "column", "value": 3000, "src": "Original K25", "group": "Labour"}, {"code": "L_CARA", "label": "Foundation carpenter (slab)", "unit": "m2", "value": 500, "src": "Original K25", "group": "Labour"}, {"code": "L_MBLK", "label": "Mason: laying blocks", "unit": "block", "value": 250, "src": "Original L25 (first floor had 25)", "group": "Labour"}, {"code": "L_MCEM", "label": "Mason: placing concrete/mortar", "unit": "bag cement", "value": 3000, "src": "Original L25 (deck had 250, first floor 220)", "group": "Labour"}, {"code": "L_BACK", "label": "Backfilling", "unit": "trip", "value": 4500, "src": "Original M25", "group": "Labour"}, {"code": "L_FIT", "label": "Foundation fitter", "unit": "column", "value": 3000, "src": "Original N25", "group": "Labour"}, {"code": "L_FCAR", "label": "Floor carpenter", "unit": "column/opening", "value": 3000, "src": "Original K66 (first floor had 400)", "group": "Labour"}, {"code": "L_FFIT", "label": "Floor fitter", "unit": "column/opening", "value": 3000, "src": "Original N66 (first floor had 300)", "group": "Labour"}, {"code": "L_DCAR", "label": "Deck carpenter", "unit": "m2", "value": 3000, "src": "Picked - original 250 was an old rate", "group": "Labour"}, {"code": "L_DFIT", "label": "Deck fitter", "unit": "m2", "value": 3000, "src": "Picked - original 200 was an old rate", "group": "Labour"}, {"code": "L_DELE", "label": "Deck electrician", "unit": "m2", "value": 1500, "src": "Picked - original 120 was an old rate", "group": "Labour"}, {"code": "L_ROOF", "label": "Roofing labour", "unit": "m2 roof plan", "value": 3000, "src": "From original 300,000 for 500 m2", "group": "Labour"}, {"code": "L_CELE", "label": "Ceiling electrician", "unit": "m2", "value": 1500, "src": "From original 150,000 for 200 m2", "group": "Labour"}, {"code": "L_CCAR", "label": "Ceiling carpenter", "unit": "m2", "value": 3000, "src": "From original 150,000 for 200 m2", "group": "Labour"}, {"code": "L_PLAS", "label": "Plastering labour", "unit": "m2", "value": 3000, "src": "From original 700,000 for 520 m2", "group": "Labour"}, {"code": "L_TILE", "label": "Tiling labour", "unit": "m2", "value": 3000, "src": "From original 600,000 for 680 m2", "group": "Labour"}, {"code": "L_PNT", "label": "Painting labour", "unit": "m2", "value": 3000, "src": "From original 350,000 for 520 m2", "group": "Labour"}]};
+
+/* ===================================================== BOQ STRUCTURE */
+const FLOOR = (P, with16) => [
+  ['Cement','bag',P+'_cem','CEM'],['Sharp sand','trip',P+'_sand','SSAND'],['Gravel','trip',P+'_grav','GRAV'],
+  ['Chipping','tonne',P+'_chip','CHIP'],['6" blocks','No.',P+'_blk','BLK6'],
+  ['2"x3"x12\' timber','length',P+'_tim','T23'],['1"x12"x12\' timber','length',P+'_tim','T112'],['Nails','bag',P+'_nail','NAIL'],
+  ...(with16?[['16mm high tensile rods','length',P+'_r16','R16']]:[]),
+  ['12mm high tensile rods','length',P+'_r12','R12'],['10mm high tensile rods','length',P+'_r10','R10'],
+  ['8mm mild steel rods','length',P+'_r8','R8'],['6mm mild steel rods','length',P+'_r6','R6'],['Binding wire','roll',P+'_wire','BWIRE'],
+  ['Labour: carpenter','col/opening',P+'_co','L_FCAR'],['Labour: mason (blocks)','block',P+'_blk','L_MBLK'],
+  ['Labour: mason (concrete)','bag',P+'_cem','L_MCEM'],['Labour: fitter','col/opening',P+'_co','L_FFIT']];
+const DECK = P => [['Cement','bag',P+'_cem','CEM'],['Sharp sand','trip',P+'_sand','SSAND'],['Gravel','trip',P+'_grav','GRAV'],['Chipping','tonne',P+'_chip','CHIP'],['Hollow deck blocks','No.',P+'_pot','HPOT'],['Bamboo props','No.',P+'_bam','BAMB'],['2"x3"x12\' timber','length',P+'_t23','T23'],['1"x12"x12\' timber','length',P+'_t112','T112'],['Nails','bag',P+'_nail','NAIL'],['16mm high tensile rods','length',P+'_r16','R16'],['12mm high tensile rods','length',P+'_r12','R12'],['10mm high tensile rods','length',P+'_r10','R10'],['8mm mild steel rods','length',P+'_r8','R8'],['Binding wire','roll',P+'_wire','BWIRE'],['Electrical pipes and boxes','m2',P+'_A','PVC_D'],['Labour: electrician','m2',P+'_A','L_DELE'],['Labour: carpenter','m2',P+'_A','L_DCAR'],['Labour: mason (concrete)','bag',P+'_cem','L_MCEM'],['Labour: fitter','m2',P+'_A','L_DFIT']];
+const BTYPES = {bungalow:{label:'Bungalow', storeys:0}, one:{label:'One-storey building', storeys:1}, two:{label:'Two-storey building', storeys:2}};
+const storeys = () => (BTYPES[S.inputs.btype] || BTYPES.one).storeys;
+const activeDefs = st => BOQ_DEF.filter(d => (d.min || 0) <= st);
+function letters(st){ const m = {}; activeDefs(st).forEach((d,i) => m[d.k] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[i]); return m; }
+const BOQ_DEF = [
+ {k:'A',t:'PRELIMINARIES',items:[['Clear site','item','one','P_CLEAR'],['Construct water tank','item','one','P_TANK'],['Construct batcher','item','one','P_BATCH'],['Site security','item','one','P_SEC'],['Wheelbarrows, headpans, shovels, etc','item','one','P_TOOL'],['Approvals and community expenses','item','one','P_APPR']]},
+ {k:'B',t:'FOUNDATION TO DPC',items:[['Cement','bag','B_cem','CEM'],['Sharp sand','trip','B_sand','SSAND'],['Gravel','trip','B_grav','GRAV'],['Chipping','tonne','B_chip','CHIP'],['9" blocks','No.','B_blk','BLK9'],['Fill sand','trip','B_fill','FILL'],['Bundle pegs','bundle','B_peg','PEG'],['2"x3"x12\' timber','length','B_tim','T23'],['1"x12"x12\' timber','length','B_tim','T112'],['Nails','bag','B_nail','NAIL'],['16mm high tensile rods','length','B_r16','R16'],['12mm high tensile rods','length','B_r12','R12'],['8mm mild steel rods (stirrups)','length','B_r8','R8'],['Binding wire','roll','B_wire','BWIRE'],['Labour: pegging','item','one','L_PEG'],['Labour: excavation','m','B_L','L_EXC'],['Labour: carpenter (columns)','column','B_N','L_CARC'],['Labour: carpenter (slab)','m2','B_A','L_CARA'],['Labour: mason (blocks)','block','B_blk','L_MBLK'],['Labour: mason (concrete)','bag','B_cem','L_MCEM'],['Labour: backfilling','trip','B_fill','L_BACK'],['Labour: fitter','column','B_N','L_FIT']]},
+ {k:'C',t:'GROUND FLOOR BLOCKWORK',items:FLOOR('C',true)},
+ {k:'D',t:'FIRST DECK & STAIRS',min:1,items:DECK('D')},
+ {k:'E',t:'FIRST FLOOR BLOCKWORK',min:1,items:FLOOR('E',false)},
+ {k:'D2',t:'SECOND DECK & STAIRS',min:2,items:DECK('D2')},
+ {k:'E2',t:'SECOND FLOOR BLOCKWORK',min:2,items:FLOOR('E2',false)},
+ {k:'F',t:'ROOFING',items:[['6mm mild steel rods','length','F_r6','R6'],['3"x4"x12\' timber','length','F_34','T34'],['2"x4"x18\' timber','length','F_2418','T2418'],['2"x4"x12\' timber','length','F_2412','T2412'],['2"x3"x12\' timber','length','F_23','T23'],['1"x10"x12\' timber (facia)','length','F_fac','T110'],['Nails','bag','F_nail','NAIL'],['Solignum','m2','F_A','SOL_R'],['0.55 aluminium roofing sheets','m2','F_sh','SHEET'],['2"x4"x12\' scaffold timber','length','F_scf','T2412'],['Labour: roofing','m2','F_A','L_ROOF']]},
+ {k:'G',t:'CEILING',items:[['2"x3"x12\' timber','length','G_23','T23'],['Ceiling boards','No.','G_bd','CEILB'],['Nails','bag','G_nl','NAIL'],['Ceiling battens','bundle','G_bt','BATT'],['POP ceiling','m2','G_pop','CL_POP'],['PVC ceiling','m2','G_pvc','CL_PVC'],['Electrical pipes and boxes','m2','G_A','PVC_C'],['Solignum','m2','G_A','SOL_C'],['Labour: electrician','m2','G_A','L_CELE'],['Labour: carpenter','m2','G_A','L_CCAR']]},
+ {k:'H',t:'PLASTERING',items:[['Cement','bag','H_ce','CEM'],['Plaster sand','trip','H_sa','PSAND'],['Labour: plastering','m2','H_A','L_PLAS']]},
+ {k:'I',t:'TILING',items:[['Cement','bag','I_ce','CEM'],['Sharp sand','trip','I_sa','SSAND'],['Wall tiles','m2','I_wt','WTILE'],['Ceramic floor tiles','m2','I_ft','FTILE'],['Labour: tiling','m2','I_A','L_TILE']]},
+ {k:'J',t:'DOORS, WINDOWS & PLUMBING',items:[['Doors','No.','J_D','DOOR'],['Aluminium windows / protectors','No.','J_W','WIN'],['WC / bath / fittings','set','J_WC','WC'],['Septic tank and soakaway','set','J_S','SEPT']]},
+ {k:'K',t:'ELECTRICAL & PAINTING',items:[['Electrical wiring and fittings','m2','GFA','ELEC'],['Paint','drum','K_pt','PAINT'],['Labour: painting','m2','H_A','L_PNT']]}
+];
+
+/* ===================================================== STORAGE */
+const KEY_SET = 'estimateBuilder.settings.v1', KEY_EX = 'estimateBuilder.extracts.v1';
+const store = {
+  get(k){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+};
+function defaultSettings(){
+  const s = {inputs:{}, assumptions:{}, rates:{}};
+  DEFAULTS.Inputs.forEach(x => s.inputs[x.key] = x.value);
+  DEFAULTS.Assumptions.forEach(x => s.assumptions[x.key] = x.value);
+  DEFAULTS.Rates.forEach(x => s.rates[x.code] = x.value);
+  return s;
+}
+let S = defaultSettings();
+(function load(){
+  const saved = store.get(KEY_SET);
+  if (saved) for (const g of ['inputs','assumptions','rates']) if (saved[g]) for (const k in S[g]) if (k in saved[g]) S[g][k] = saved[g][k];
+})();
+let EX = store.get(KEY_EX) || [];
+let saveTimer = null;
+function saveSettings(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => store.set(KEY_SET, S), 250); }
+function saveExtracts(){ store.set(KEY_EX, EX); }
+
+/* ===================================================== HELPERS */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num = v => (v === '' || v === null || v === undefined || isNaN(+v)) ? 0 : +v;
+const ceil9 = x => Math.ceil(+(+x).toFixed(9));
+const r9 = x => +(+x).toFixed(9);
+const nf0 = new Intl.NumberFormat('en-NG',{maximumFractionDigits:0});
+const nf2 = new Intl.NumberFormat('en-NG',{minimumFractionDigits:2,maximumFractionDigits:2});
+const f0 = n => (Math.abs(n) < 0.5 ? '-' : nf0.format(Math.round(n)));
+const f2 = n => (Math.abs(n) < 0.005 ? '-' : nf2.format(n));
+const fq = n => Number.isInteger(r9(n)) ? nf0.format(r9(n)) : nf2.format(n);
+const naira = n => '₦' + nf0.format(Math.round(n));
+const pct = v => (num(v)*100).toLocaleString('en-NG',{maximumFractionDigits:2}) + '%';
+function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('on'), 2200); }
+const picked = src => /^Picked/i.test(src || '');
+
+/* ===================================================== ENGINE (mirrors the closed workbook) */
+function compute(I, A, st, LT){
+  const decks = (st >= 1 ? I.D_A : 0) + (st >= 2 ? I.D2_A : 0);
+  const deckTxt = st === 0 ? 'no deck' : st === 1 ? 'deck' : 'both decks';
+  const q = {one:1}, T = {};
+  const sec = (k,t) => T[k] = {title:t, conc:[], qty:[]};
+  const conc = (k,label,how,vol,mix) => {
+    const r = {label,how,vol,chip:0,grav:0,sand:0,cem:0,blk:0};
+    if (mix==='s'){ r.chip=vol*A.s_ch; r.grav=vol*A.s_gr; r.sand=vol*A.s_sa; r.cem=vol*A.s_ce; }
+    else { r.grav=vol*A.b_gr; r.sand=vol*A.b_sa; r.cem=vol*A.b_ce; }
+    T[k].conc.push(r);
+  };
+  const walls = (k,C,L) => { const blk=C*A.bk_m*L, sand=blk/A.bk_trip;
+    T[k].conc.push({label:'Blockwork',how:`${C} courses × ${A.bk_m} blocks/m × ${L} m; sand = blocks ÷ ${A.bk_trip}; cement = ${A.bk_ce} bags per trip`,vol:0,chip:0,grav:0,sand,cem:sand*A.bk_ce,blk}); };
+  const tot = k => { const t={vol:0,chip:0,grav:0,sand:0,cem:0,blk:0}; T[k].conc.forEach(r=>{for(const f in t) t[f]+=r[f];}); T[k].tot=t; for(const f in t) q[k+'_'+f]=t[f]; };
+  const Q = (k,key,label,how,val,unit) => { q[key]=val; T[k].qty.push({label,how,val,unit}); };
+
+  sec('GEN','GENERAL');
+  Q('GEN','GFA','Gross floor area',`${I.B_A} m2 footprint + ${decks} m2 ${deckTxt}`, I.B_A + decks, 'm2');
+
+  sec('B',`${LT.B}. FOUNDATION TO DPC`);
+  conc('B','Column pads',`${A.pad} m3 per pad × ${I.B_N} columns`, A.pad*I.B_N,'s');
+  conc('B','Columns to DPC',`${A.col_x} m2 × ${A.col_h0} m × ${I.B_N} columns`, A.col_x*A.col_h0*I.B_N,'s');
+  conc('B','Wall strip footing',`(${I.B_L} m − ${I.B_N} × ${A.pad_l} m) × ${A.strip_x} m2`, (I.B_L - I.B_N*A.pad_l)*A.strip_x,'b');
+  conc('B','DPC slab',`${I.B_A} m2 × ${A.dpc_t} m`, I.B_A*A.dpc_t,'b');
+  walls('B', I.B_C, I.B_L); tot('B');
+  Q('B','B_fill','Fill sand',`${I.B_A} m2 × ${A.fill_d} m ÷ ${A.fill_v} m3/trip`, I.B_A*A.fill_d/A.fill_v,'trip');
+  Q('B','B_peg','Bundles of pegs',`${I.B_L} m ÷ ${A.peg} m/bundle`, I.B_L/A.peg,'bundle');
+  Q('B','B_tim','Timber, each size',`${I.B_L} m × ${A.fT}`, I.B_L*A.fT,'length');
+  Q('B','B_r16','16mm rods',`${A.rB16} per column × ${I.B_N}`, A.rB16*I.B_N,'length');
+  Q('B','B_r12','12mm rods',`${A.rB12} per column × ${I.B_N}`, A.rB12*I.B_N,'length');
+  Q('B','B_r8','8mm stirrups',`${A.rB8} per column × ${I.B_N}`, A.rB8*I.B_N,'length');
+  Q('B','B_nail','Nails',`2 × ${fq(q.B_tim)} timber lengths ÷ ${A.nail}`, 2*q.B_tim/A.nail,'bag');
+  Q('B','B_wire','Binding wire',`rod lengths ÷ ${A.wire}`, (q.B_r16+q.B_r12+q.B_r8)/A.wire,'roll');
+
+  const floor = (P,title,with16) => {
+    const N=I[P+'_N'], O=I[P+'_O'];
+    sec(P,title);
+    conc(P,'Columns',`${A.col_x} m2 × ${A.col_h1} m × ${N} columns`, A.col_x*A.col_h1*N,'s');
+    conc(P,'Lintels',`${A.col_x} m2 × ${A.lin_l} m × ${O} openings`, A.col_x*A.lin_l*O,'s');
+    walls(P, I[P+'_C'], I[P+'_L']); tot(P);
+    const rods = [];
+    if (with16){ Q(P,P+'_r16','16mm rods',`${A.rC16} per column × ${N}`, A.rC16*N,'length'); rods.push(P+'_r16'); }
+    Q(P,P+'_r12','12mm rods',`${A.rF12} per column × ${N}`, A.rF12*N,'length');
+    Q(P,P+'_r8','8mm rods',`${A.rF8} per column × ${N}`, A.rF8*N,'length');
+    Q(P,P+'_r10','10mm rods',`${A.rF10} per opening × ${O}`, A.rF10*O,'length');
+    Q(P,P+'_r6','6mm rods',`${A.rF6} per opening × ${O}`, A.rF6*O,'length');
+    rods.push(P+'_r12',P+'_r8',P+'_r10',P+'_r6');
+    Q(P,P+'_tim','Timber, each size',`${A.tF} × (${N} columns + ${O} openings)`, A.tF*(N+O),'length');
+    Q(P,P+'_nail','Nails',`2 × timber lengths ÷ ${A.nail}`, 2*q[P+'_tim']/A.nail,'bag');
+    Q(P,P+'_wire','Binding wire',`rod lengths ÷ ${A.wire}`, rods.reduce((s,k)=>s+q[k],0)/A.wire,'roll');
+    Q(P,P+'_co','Columns + openings (labour)',`${N} + ${O}`, N+O,'No.');
+  };
+  floor('C',`${LT.C}. GROUND FLOOR BLOCKWORK`,true);
+
+  const deck = (P,title) => {
+    const DA = I[P+'_A'], DL = I[P+'_L'];
+    sec(P,title);
+    conc(P,'Deck slab',`${DA} m2 × ${A.deck_t} m`, DA*A.deck_t,'s'); tot(P);
+    Q(P,P+'_pot','Hollow deck blocks',`${A.dpot} per m2 × ${DA}`, A.dpot*DA,'No.');
+    Q(P,P+'_r16','16mm rods',`${A.d16} per m of beam × ${DL} m`, A.d16*DL,'length');
+    Q(P,P+'_r12','12mm rods',`${fq(A.d12)} per m of beam × ${DL} m`, A.d12*DL,'length');
+    Q(P,P+'_r10','10mm rods',`${A.d10} per m2 × ${DA}`, A.d10*DA,'length');
+    Q(P,P+'_r8','8mm rods',`${A.d8} per m of beam × ${DL} m`, A.d8*DL,'length');
+    Q(P,P+'_t23','2"x3"x12\' timber',`${A.d23} per m2 × ${DA}`, A.d23*DA,'length');
+    Q(P,P+'_t112','1"x12"x12\' planks',`${A.dpl} per m2 × ${DA}`, A.dpl*DA,'length');
+    Q(P,P+'_bam','Bamboo props',`${A.dbam} per m2 × ${DA}`, A.dbam*DA,'No.');
+    Q(P,P+'_nail','Nails',`timber lengths ÷ ${A.nail}`, (q[P+'_t23']+q[P+'_t112'])/A.nail,'bag');
+    Q(P,P+'_wire','Binding wire',`rod lengths ÷ ${A.wire}`, (q[P+'_r16']+q[P+'_r12']+q[P+'_r10']+q[P+'_r8'])/A.wire,'roll');
+  };
+  if (st >= 1){ deck('D', `${LT.D}. FIRST DECK & STAIRS`); floor('E', `${LT.E}. FIRST FLOOR BLOCKWORK`, false); }
+  if (st >= 2){ deck('D2', `${LT.D2}. SECOND DECK & STAIRS`); floor('E2', `${LT.E2}. SECOND FLOOR BLOCKWORK`, false); }
+
+
+  sec('F',`${LT.F}. ROOFING`);
+  Q('F','F_sh','Roofing sheets',`${I.F_A} m2 × ${A.rf_sh}`, I.F_A*A.rf_sh,'m2');
+  Q('F','F_r6','6mm rods',`${I.F_A} m2 × ${A.rf_6}`, I.F_A*A.rf_6,'length');
+  Q('F','F_34','3"x4"x12\' timber',`${I.F_A} m2 × ${A.rf_34}`, I.F_A*A.rf_34,'length');
+  Q('F','F_2418','2"x4"x18\' timber',`${I.F_A} m2 × ${A.rf_2418}`, I.F_A*A.rf_2418,'length');
+  Q('F','F_2412','2"x4"x12\' timber',`${I.F_A} m2 × ${A.rf_2412}`, I.F_A*A.rf_2412,'length');
+  Q('F','F_23','2"x3"x12\' timber',`${I.F_A} m2 × ${A.rf_23}`, I.F_A*A.rf_23,'length');
+  Q('F','F_scf','Scaffold timber',`${I.F_A} m2 × ${A.rf_scf}`, I.F_A*A.rf_scf,'length');
+  Q('F','F_nail','Nails',`${I.F_A} m2 × ${A.rf_nail}`, I.F_A*A.rf_nail,'bag');
+  Q('F','F_fac','Facia boards',`${I.F_P} m ÷ ${A.fac_l} m`, I.F_P/A.fac_l,'length');
+
+  sec('G',`${LT.G}. CEILING`);
+  Q('G','G_23','2"x3"x12\' timber',`${I.G_A} m2 × ${A.cl_23}`, I.G_A*A.cl_23,'length');
+  Q('G','G_bd','Ceiling board bundles',`${I.G_A} m2 × ${A.cl_bd}`, I.G_A*A.cl_bd,'No.');
+  Q('G','G_nl','Nails',`${I.G_A} m2 × ${A.cl_nl}`, I.G_A*A.cl_nl,'bag');
+  Q('G','G_bt','Ceiling battens',`${I.G_A} m2 × ${A.cl_bt}`, I.G_A*A.cl_bt,'bundle');
+  Q('G','G_pop','POP ceiling','POP ceiling area', I.G_POP,'m2');
+  Q('G','G_pvc','PVC ceiling','PVC ceiling area', I.G_PVC,'m2');
+
+  sec('H',`${LT.H}. PLASTERING  |  ${LT.K}. PAINTING`);
+  Q('H','H_A','Plaster area',`${I.H_W} m2 walls + ${decks} m2 deck soffit`, I.H_W + decks,'m2');
+  Q('H','H_ce','Cement',`plaster area × ${A.pl_ce}`, q.H_A*A.pl_ce,'bag');
+  Q('H','H_sa','Plaster sand',`plaster area × ${A.pl_sa}`, q.H_A*A.pl_sa,'trip');
+  Q('H','K_pt','Paint',`plaster area × ${A.pt_dr}`, q.H_A*A.pt_dr,'drum');
+
+  sec('I',`${LT.I}. TILING`);
+  Q('I','I_fl','Floor area tiled',`${I.B_A} footprint + ${decks} ${deckTxt} − ${I.I_PVC} PVC`, I.B_A + decks - I.I_PVC,'m2');
+  Q('I','I_wl','Wall area tiled',`${I.I_KW} kitchen + ${I.I_TW} toilet`, I.I_KW + I.I_TW,'m2');
+  Q('I','I_A','Total area tiled','floor + wall', q.I_fl + q.I_wl,'m2');
+  Q('I','I_ft','Floor tiles to order',`floor area + ${pct(A.tl_w)} waste`, q.I_fl*(1+A.tl_w),'m2');
+  Q('I','I_wt','Wall tiles to order',`wall area + ${pct(A.tl_w)} waste`, q.I_wl*(1+A.tl_w),'m2');
+  Q('I','I_ce','Cement',`area tiled × ${A.tl_ce}`, q.I_A*A.tl_ce,'bag');
+  Q('I','I_sa','Sharp sand',`area tiled × ${A.tl_sa}`, q.I_A*A.tl_sa,'trip');
+  return {q, T};
+}
+
+function nums(group){ const o = {}; for (const k in S[group]) o[k] = num(S[group][k]); return o; }
+function buildLive(){
+  const I = nums('inputs'), A = nums('assumptions'), R = S.rates;
+  const st = storeys(), LT = letters(st);
+  const {q, T} = compute(I, A, st, LT);
+  const sections = activeDefs(st).map(s => {
+    const items = s.items.map((it,i) => {
+      const [desc, unit, key, code] = it;
+      const calc = (key in q) ? q[key] : I[key];
+      const qty = ceil9(calc), rate = num(R[code]);
+      return {ref:LT[s.k]+(i+1), desc, unit, key, code, calc, qty, rate};
+    });
+    return {k:LT[s.k], key:s.k, t:s.t, items};
+  });
+  return {I, A, q, T, ...totals(sections, I.fee, I.cont), sections};
+}
+function totals(sections, fee, cont){
+  let sum = 0, sumSub = 0, sumFee = 0;
+  const secTot = sections.map(s => {
+    const sub = s.items.reduce((a,it) => it.removed ? a : a + num(it.qty)*num(it.rate), 0);
+    const f = Math.round(sub*num(fee));
+    const total = sub + f; sum += total; sumSub += sub; sumFee += f;
+    return {k:s.k, t:s.t, sub, fee:f, total};
+  });
+  const contAmt = Math.round(sum*num(cont));
+  return {secTot, sum, sumSub, sumFee, contAmt, grand: sum + contAmt};
+}
+function checks(L){
+  const I = L.I, out = [];
+  const add = (label, ok, fix, detail='') => out.push({label, ok, fix, detail});
+  const codes = new Set(DEFAULTS.Rates.map(r => r.code));
+  const missing = []; L.sections.forEach(s => s.items.forEach(it => { if (!codes.has(it.code)) missing.push(it.code); }));
+  add('Every BOQ rate code exists in Rates', !missing.length, 'Add the code to Rates.', missing.join(', '));
+  const noPrice = DEFAULTS.Rates.filter(r => !/^P_/.test(r.code) && !(num(S.rates[r.code]) > 0)).map(r => r.label);
+  add('Every rate has a price (preliminaries may be blank)', !noPrice.length, 'Enter the missing price on Rates.', noPrice.join(', '));
+  const badA = DEFAULTS.Assumptions.filter(a => !(num(S.assumptions[a.key]) > 0)).map(a => a.label);
+  add('Every assumption is above zero', !badA.length, 'Enter the missing factor on Assumptions.', badA.join(', '));
+  const negI = DEFAULTS.Inputs.filter(x => typeof x.value === 'number' && num(S.inputs[x.key]) < 0).map(x => x.label);
+  add('No negative inputs', !negI.length, 'Correct the input.', negI.join(', '));
+  add('POP + PVC area does not exceed ceiling area', I.G_POP + I.G_PVC <= I.G_A, 'Reduce POP or PVC area, or increase the ceiling area.');
+  add('Tiled floor area is not negative', L.q.I_fl >= 0, 'PVC area is larger than the floor area.');
+  const zero = L.secTot.filter(s => s.k !== 'A' && s.total === 0).map(s => s.t);
+  add('No section total is zero (Preliminaries may be zero)', !zero.length, 'A section has lost its prices or quantities.', zero.join(', '));
+  add('Fee and contingency between 0% and 50%', I.fee >= 0 && I.fee <= .5 && I.cont >= 0 && I.cont <= .5, 'Check fee and contingency on Inputs.');
+  return out;
+}
+
+/* ===================================================== RENDER: forms */
+function groupBy(arr){ const m = new Map(); arr.forEach(x => { if (!m.has(x.group)) m.set(x.group, []); m.get(x.group).push(x); }); return m; }
+const PCT_KEYS = new Set(['fee','cont']);
+function renderInputs(){
+  let h = '';
+  const st = storeys(), NEED = {'FIRST DECK & STAIRS':1, 'FIRST FLOOR BLOCKWORK':1, 'SECOND DECK & STAIRS':2, 'SECOND FLOOR BLOCKWORK':2};
+  for (const [g, rows] of groupBy(DEFAULTS.Inputs)){
+    if ((NEED[g] || 0) > st) continue;
+    h += `<div class="card"><h3>${esc(g)}</h3><div class="grid-form">`;
+    rows.forEach(x => {
+      const isText = typeof x.value === 'string';
+      const v = S.inputs[x.key];
+      if (x.key === 'btype'){
+        h += `<div class="field"><label for="in_btype">${esc(x.label)}</label><div class="row"><select id="in_btype" class="bsel" data-g="inputs" data-k="btype">${Object.entries(BTYPES).map(([k,b]) => `<option value="${k}" ${v===k?'selected':''}>${b.label}</option>`).join('')}</select></div><span class="src">Sections and floor areas follow this choice</span></div>`;
+        return;
+      }
+      const shown = PCT_KEYS.has(x.key) ? r9(num(v)*100) : (v ?? '');
+      const unit = PCT_KEYS.has(x.key) ? '%' : (x.unit || '');
+      h += `<div class="field"><label for="in_${x.key}">${esc(x.label)}</label><div class="row">
+        <input id="in_${x.key}" data-g="inputs" data-k="${x.key}" ${isText ? 'type="text"' : 'type="number" inputmode="decimal" step="any"'} value="${esc(shown)}">
+        ${unit ? `<span class="unit">${esc(unit)}</span>` : ''}</div>
+        ${x.src ? `<span class="src ${picked(x.src)?'picked':''}">${esc(x.src)}</span>` : ''}</div>`;
+    });
+    h += `</div></div>`;
+  }
+  $('#inputsForm').innerHTML = h;
+}
+function renderAssumptions(){
+  let h = '';
+  for (const [g, rows] of groupBy(DEFAULTS.Assumptions)){
+    h += `<div class="card"><h3>${esc(g)}</h3><div class="grid-form">`;
+    rows.forEach(x => {
+      const isPct = x.unit === '%';
+      const v = S.assumptions[x.key];
+      h += `<div class="field"><label for="as_${x.key}">${esc(x.label)}</label><div class="row">
+        <input id="as_${x.key}" data-g="assumptions" data-k="${x.key}" data-pct="${isPct?1:''}" type="number" inputmode="decimal" step="any" value="${esc(isPct ? r9(num(v)*100) : r9(num(v)))}">
+        <span class="unit">${esc(x.unit || '')}</span></div>
+        <span class="src ${/^Original/.test(x.src||'')?'':'picked'}">${esc(x.src || '')}</span></div>`;
+    });
+    h += `</div></div>`;
+  }
+  $('#assumpForm').innerHTML = h;
+}
+function renderRates(){
+  const term = ($('#rateSearch').value || '').toLowerCase().trim();
+  let h = '';
+  for (const [g, rows] of groupBy(DEFAULTS.Rates)){
+    const vis = rows.filter(r => !term || (r.label + ' ' + r.code + ' ' + r.unit).toLowerCase().includes(term));
+    if (!vis.length) continue;
+    h += `<div class="card"><h3>${esc(g)}</h3><div class="scroll"><table><thead><tr><th class="hide-sm">Code</th><th>Item</th><th class="hide-sm">Unit</th><th class="num">Rate (₦)</th></tr></thead><tbody>`;
+    vis.forEach(r => {
+      const v = S.rates[r.code];
+      h += `<tr><td class="code hide-sm">${esc(r.code)}</td><td>${esc(r.label)}<div class="src ${picked(r.src)?'picked':''}">${esc(r.unit)} &middot; ${esc(r.src||'')}</div></td><td class="hide-sm muted">${esc(r.unit)}</td>
+        <td class="num"><input class="rate-in" data-g="rates" data-k="${r.code}" type="number" inputmode="decimal" step="any" value="${esc(v ?? '')}" placeholder="blank"></td></tr>`;
+    });
+    h += `</tbody></table></div></div>`;
+  }
+  $('#ratesForm').innerHTML = h || '<div class="card empty">No rates match.</div>';
+}
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (el.dataset && el.dataset.g){
+    const g = el.dataset.g, k = el.dataset.k;
+    let v = el.value;
+    if (el.type === 'number'){
+      if (v === '') v = (g === 'rates') ? null : 0;
+      else { v = +v; if (PCT_KEYS.has(k) && g === 'inputs') v = v/100; if (el.dataset.pct) v = v/100; }
+    }
+    S[g][k] = v; saveSettings(); refreshLive();
+    if (k === 'btype'){ renderInputs(); toast((BTYPES[v]||{}).label + ' selected'); }
+  }
+});
+$('#rateSearch').addEventListener('input', renderRates);
+
+/* ===================================================== RENDER: live views */
+let LIVE = null;
+function refreshLive(){
+  LIVE = buildLive();
+  $('#hdrTotal').textContent = naira(LIVE.grand);
+  $('#hdrProject').textContent = [(BTYPES[S.inputs.btype]||BTYPES.one).label, S.inputs.client].filter(Boolean).join(' · ');
+  const cur = document.querySelector('nav.tabs button.on')?.dataset.tab;
+  if (cur === 'takeoff') renderTakeoff();
+  if (cur === 'boq') renderBOQ();
+  if (cur === 'summary') renderSummary();
+}
+function renderTakeoff(){
+  const L = LIVE; let h = '';
+  for (const k in L.T){
+    const s = L.T[k];
+    h += `<div class="card"><h3>${esc(s.title)}</h3>`;
+    if (s.conc.length){
+      h += `<div class="scroll"><table><thead><tr><th>Concrete / blockwork</th><th class="num">Volume m3</th><th class="num">Chipping t</th><th class="num">Gravel trips</th><th class="num">Sand trips</th><th class="num">Cement bags</th><th class="num">Blocks</th></tr></thead><tbody>`;
+      s.conc.forEach(r => h += `<tr><td>${esc(r.label)}<div class="how">${esc(r.how)}</div></td><td class="num">${f2(r.vol)}</td><td class="num">${f2(r.chip)}</td><td class="num">${f2(r.grav)}</td><td class="num">${f2(r.sand)}</td><td class="num">${f2(r.cem)}</td><td class="num">${f0(r.blk)}</td></tr>`);
+      const t = s.tot;
+      h += `<tr class="tot"><td>Total</td><td class="num">${f2(t.vol)}</td><td class="num">${f2(t.chip)}</td><td class="num">${f2(t.grav)}</td><td class="num">${f2(t.sand)}</td><td class="num">${f2(t.cem)}</td><td class="num">${f0(t.blk)}</td></tr></tbody></table></div>`;
+    }
+    if (s.qty.length){
+      h += `<div class="scroll"><table><thead><tr><th>Quantity</th><th class="num">Value</th><th>Unit</th></tr></thead><tbody>`;
+      s.qty.forEach(r => h += `<tr><td>${esc(r.label)}<div class="how">${esc(r.how)}</div></td><td class="num">${f2(r.val)}</td><td class="muted">${esc(r.unit)}</td></tr>`);
+      h += `</tbody></table></div>`;
+    }
+    h += `</div>`;
+  }
+  $('#takeoffView').innerHTML = h;
+}
+function renderBOQ(){
+  const L = LIVE; let h = `<div class="card"><div class="scroll"><table><thead><tr><th>Ref</th><th>Description</th><th class="hide-sm">Unit</th><th class="num hide-sm">Calculated</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount (₦)</th></tr></thead><tbody>`;
+  L.sections.forEach((s,i) => {
+    const t = L.secTot[i];
+    h += `<tr class="sec"><td>${s.k}</td><td colspan="6">${esc(s.t)}</td></tr>`;
+    s.items.forEach(it => h += `<tr><td class="muted">${it.ref}</td><td>${esc(it.desc)}<span class="code"> ${esc(it.code)}</span></td><td class="hide-sm muted">${esc(it.unit)}</td><td class="num hide-sm muted">${f2(it.calc)}</td><td class="num">${f0(it.qty)}</td><td class="num">${f0(it.rate)}</td><td class="num">${f0(it.qty*it.rate)}</td></tr>`);
+    h += `<tr class="sub"><td></td><td colspan="5">Subtotal</td><td class="num">${f0(t.sub)}</td></tr>
+          <tr><td></td><td colspan="5">Arch/Engr/Mgt fees (${pct(L.I.fee)})</td><td class="num">${f0(t.fee)}</td></tr>
+          <tr class="tot"><td></td><td colspan="5">Section total</td><td class="num">${f0(t.total)}</td></tr>`;
+  });
+  h += `</tbody></table></div></div>`;
+  $('#boqView').innerHTML = h;
+}
+function summaryTable(secTot, sum, sumSub, sumFee, contAmt, grand, cont){
+  let run = 0, h = `<div class="scroll"><table><thead><tr><th>Ref</th><th>Section</th><th class="num hide-sm">Subtotal</th><th class="num hide-sm">Fees</th><th class="num">Total (₦)</th><th class="num hide-sm">%</th><th class="num hide-sm">Running total</th></tr></thead><tbody>`;
+  secTot.forEach(s => { run += s.total;
+    h += `<tr><td><b>${s.k}</b></td><td>${esc(s.t)}</td><td class="num hide-sm">${f0(s.sub)}</td><td class="num hide-sm">${f0(s.fee)}</td><td class="num">${f0(s.total)}</td><td class="num hide-sm">${grand ? (s.total/grand*100).toFixed(1)+'%' : '-'}</td><td class="num hide-sm">${f0(run)}</td></tr>`; });
+  h += `<tr class="sub"><td></td><td>Sum of sections</td><td class="num hide-sm">${f0(sumSub)}</td><td class="num hide-sm">${f0(sumFee)}</td><td class="num">${f0(sum)}</td><td class="hide-sm"></td><td class="hide-sm"></td></tr>
+        <tr><td></td><td>Contingency (${pct(cont)})</td><td class="hide-sm"></td><td class="hide-sm"></td><td class="num">${f0(contAmt)}</td><td class="hide-sm"></td><td class="hide-sm"></td></tr>
+        <tr class="grand"><td></td><td>GRAND TOTAL</td><td class="hide-sm"></td><td class="hide-sm"></td><td class="num">${naira(grand)}</td><td class="hide-sm"></td><td class="hide-sm"></td></tr></tbody></table></div>`;
+  return h;
+}
+function renderSummary(){
+  const L = LIVE;
+  $('#summaryView').innerHTML = `<div class="card"><h3>${esc(S.inputs.proj||'')} &mdash; ${esc(S.inputs.client||'')}</h3>${summaryTable(L.secTot, L.sum, L.sumSub, L.sumFee, L.contAmt, L.grand, L.I.cont)}</div>`;
+  const C = checks(L), fails = C.filter(c => !c.ok).length;
+  $('#checkPill').innerHTML = fails ? `<span class="pill fail">${fails} FAILED</span>` : `<span class="pill pass">ALL PASS</span>`;
+  $('#checksView').innerHTML = C.map(c => `<li><span class="pill ${c.ok?'pass':'fail'}">${c.ok?'PASS':'FAIL'}</span><div>${esc(c.label)}${!c.ok ? `<div class="fix">${esc(c.fix)}${c.detail ? ' — '+esc(c.detail) : ''}</div>` : ''}</div></li>`).join('');
+}
+
+/* ===================================================== EXTRACTS */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+function today(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function makeExtract(){
+  const L = buildLive();
+  const n = EX.length + 1;
+  const ex = {
+    id: uid(), name: `Extract ${n} — ${today()}`, created: new Date().toISOString(),
+    project: S.inputs.proj || '', client: S.inputs.client || '', prepared: S.inputs.prep || '', date: today(),
+    fee: L.I.fee, cont: L.I.cont, note: '',
+    sections: L.sections.map(s => ({k:s.k, t:s.t, items: s.items.map(it => ({desc:it.desc, unit:it.unit, qty0:it.qty, rate0:it.rate, qty:it.qty, rate:it.rate}))}))
+  };
+  EX.unshift(ex); saveExtracts();
+  return ex;
+}
+const isAdj = it => !it.added && (num(it.qty) !== it.qty0 || num(it.rate) !== it.rate0);
+function exTotals(ex){ return totals(ex.sections, ex.fee, ex.cont); }
+function exChanges(ex){ let a = 0, n = 0, r = 0; ex.sections.forEach(s => s.items.forEach(it => { if (it.removed) r++; else if (it.added) n++; else if (isAdj(it)) a++; })); return {a, n, r, all: a+n+r}; }
+function exChangeText(c){ const p = []; if (c.a) p.push(c.a+' adjusted'); if (c.n) p.push(c.n+' added'); if (c.r) p.push(c.r+' removed'); return p.length ? p.join(', ') : 'no manual changes'; }
+function renderExList(){
+  if (!EX.length){ $('#exList').innerHTML = '<div class="empty">No extracts yet. Make one from the BOQ when you are ready to print or adjust.</div>'; return; }
+  $('#exList').innerHTML = EX.map(ex => { const t = exTotals(ex);
+    return `<div class="item"><div class="meta"><b>${esc(ex.name)}</b><span class="muted" style="font-size:13px">${esc(ex.client)} · ${naira(t.grand)} · ${exChangeText(exChanges(ex))}</span></div>
+      <button class="btn primary" data-act="openEx" data-id="${ex.id}">Open</button>
+      <button class="btn" data-act="dupEx" data-id="${ex.id}">Duplicate</button>
+      <button class="btn danger" data-act="delEx" data-id="${ex.id}">Delete</button></div>`; }).join('');
+}
+let CUR = null;
+const PO_KEY = 'estimateBuilder.printOpts';
+const printOpts = Object.assign({hideZero:true, marks:false, orient:'portrait', content:'together'}, store.get(PO_KEY) || {});
+function savePO(){ store.set(PO_KEY, printOpts); }
+function openExtract(id){
+  CUR = EX.find(e => e.id === id); if (!CUR) return;
+  $('#exListView').style.display = 'none'; $('#exEditView').style.display = 'block';
+  renderExEditor(); window.scrollTo(0,0);
+}
+function closeExtract(){ CUR = null; $('#exEditView').style.display = 'none'; $('#exListView').style.display = 'block'; renderExList(); }
+function outButtons(){
+  const sep = printOpts.content === 'separate';
+  return `<button class="btn primary" data-act="pdf">${sep ? 'Download PDFs (BOQ + Summary)' : 'Download PDF'}</button>
+    ${sep ? '<button class="btn" data-act="print" data-part="boq">Print BOQ</button><button class="btn" data-act="print" data-part="summary">Print Summary</button>' : '<button class="btn" data-act="print">Print</button>'}
+    <button class="btn" data-act="csv">Download CSV</button>`;
+}
+function renderExEditor(){
+  const ex = CUR;
+  const sel = (opt, choices) => `<select data-opt="${opt}">${choices.map(([v,l]) => `<option value="${v}" ${printOpts[opt]===v?'selected':''}>${l}</option>`).join('')}</select>`;
+  $('#exEditView').innerHTML = `<div class="toolbar"><button class="btn" data-act="backEx">&larr; All extracts</button><span id="outBtns" style="display:contents">${outButtons()}</span>
+      <button class="btn danger" data-act="resetEx">Undo all changes</button></div>
+    <div class="notice">This is an isolated copy. Changing, adding or removing rows here does not touch your Inputs, Rates or the live BOQ. Adjusted rows are yellow, added rows are green.</div>
+    <div class="card"><h3>Document details</h3><div class="ex-head">
+      ${[['name','Extract name'],['project','Project'],['client','Client'],['prepared','Prepared by'],['date','Date']].map(([k,l]) => `<div class="field"><label>${l}</label><div class="row"><input data-ex="${k}" type="text" value="${esc(ex[k])}"></div></div>`).join('')}
+      <div class="field"><label>Fee %</label><div class="row"><input data-ex="fee" type="number" inputmode="decimal" step="any" value="${r9(ex.fee*100)}"><span class="unit">%</span></div></div>
+      <div class="field"><label>Contingency %</label><div class="row"><input data-ex="cont" type="number" inputmode="decimal" step="any" value="${r9(ex.cont*100)}"><span class="unit">%</span></div></div>
+    </div>
+    <div class="field"><label>Note (printed under the summary)</label><div class="row"><input data-ex="note" type="text" value="${esc(ex.note)}" placeholder="Optional"></div></div></div>
+    <div class="card"><h3>Print options</h3><div class="field opts">
+      <label>Page ${sel('orient', [['portrait','Portrait'],['landscape','Landscape']])}</label>
+      <label>Content ${sel('content', [['together','BOQ + Summary in one document'],['separate','BOQ and Summary as separate documents'],['boq','BOQ only'],['summary','Summary only']])}</label>
+      <label><input type="checkbox" data-opt="hideZero" ${printOpts.hideZero?'checked':''}> Hide lines and sections worth ₦0</label>
+      <label><input type="checkbox" data-opt="marks" ${printOpts.marks?'checked':''}> Mark adjusted / added lines with *</label>
+    </div><div class="field muted" style="font-size:13px">Sections are never split across pages: if a section does not fit on the rest of a page, it starts on a new page. Only a section longer than a whole page continues over pages.</div></div>
+    <div class="card"><div class="scroll"><table class="ex-table"><thead><tr><th>Ref</th><th>Description</th><th>Unit</th><th class="num w-qty">Qty</th><th class="num w-rate">Rate (₦)</th><th class="num">Amount (₦)</th><th></th></tr></thead><tbody id="exBody"></tbody></table></div></div>
+    <div class="card"><h3>Summary</h3><div id="exSummary"></div></div>`;
+  renderExBody(); renderExSummary();
+}
+function renderExBody(){
+  const ex = CUR, t = exTotals(ex); let h = '';
+  ex.sections.forEach((s,si) => {
+    const st = t.secTot[si];
+    h += `<tr class="sec"><td>${s.k}</td><td colspan="6">${esc(s.t)}</td></tr>`;
+    let n = 0, removed = 0;
+    s.items.forEach((it,ii) => {
+      if (it.removed){ removed++; return; }
+      const ref = s.k + (++n);
+      const adj = isAdj(it), qc = !it.added && num(it.qty) !== it.qty0, rc = !it.added && num(it.rate) !== it.rate0;
+      const cls = it.added ? 'added' : '';
+      const descCell = it.added
+        ? `<input class="cell-in txt added" type="text" placeholder="Description" data-si="${si}" data-ii="${ii}" data-f="desc" value="${esc(it.desc)}">`
+        : esc(it.desc);
+      const unitCell = it.added
+        ? `<input class="cell-in txt added" type="text" placeholder="Unit" data-si="${si}" data-ii="${ii}" data-f="unit" value="${esc(it.unit)}" style="width:80px">`
+        : esc(it.unit);
+      h += `<tr class="line ${cls}"><td class="muted hide-sm">${ref}</td><td class="d"><span class="ref">${ref}</span>${descCell}</td><td class="u muted">${unitCell}</td>
+        <td class="q w-qty"><input class="cell-in ${qc?'changed':''} ${cls}" type="number" inputmode="decimal" step="any" data-si="${si}" data-ii="${ii}" data-f="qty" value="${esc(it.qty)}"><span class="was" data-was="qty-${si}-${ii}">${qc?'was '+fq(it.qty0):''}</span></td>
+        <td class="r w-rate"><input class="cell-in ${rc?'changed':''} ${cls}" type="number" inputmode="decimal" step="any" data-si="${si}" data-ii="${ii}" data-f="rate" value="${esc(it.rate)}"><span class="was" data-was="rate-${si}-${ii}">${rc?'was '+f0(it.rate0):''}</span></td>
+        <td class="a num" data-amt="${si}-${ii}">${f0(num(it.qty)*num(it.rate))}</td>
+        <td class="x"><button class="icon-btn" title="Undo changes to this row" data-act="resetLine" data-si="${si}" data-ii="${ii}" data-undo="${si}-${ii}" style="${adj?'':'visibility:hidden'}">&#8634;</button><button class="icon-btn del" title="Remove this row" data-act="removeLine" data-si="${si}" data-ii="${ii}">&#10005;</button></td></tr>`;
+    });
+    h += `<tr class="addrow"><td class="hide-sm"></td><td colspan="6"><button class="btn small" data-act="addLine" data-si="${si}">+ Add row to ${s.k}</button>
+      ${removed ? `<span class="muted" style="font-size:13px;margin-left:10px">${removed} row${removed>1?'s':''} removed &middot; <a href="#" data-act="restoreSec" data-si="${si}">restore</a></span>` : ''}</td></tr>`;
+    h += `<tr class="sub"><td class="hide-sm"></td><td colspan="4">Subtotal ${s.k}</td><td class="num" data-sub="${si}">${f0(st.sub)}</td><td class="hide-sm"></td></tr>
+          <tr class="sub"><td class="hide-sm"></td><td colspan="4" data-feelbl>Fees (${pct(ex.fee)})</td><td class="num" data-fee="${si}">${f0(st.fee)}</td><td class="hide-sm"></td></tr>
+          <tr class="tot"><td class="hide-sm"></td><td colspan="4">Section total ${s.k}</td><td class="num" data-tot="${si}">${f0(st.total)}</td><td class="hide-sm"></td></tr>`;
+  });
+  $('#exBody').innerHTML = h;
+}
+function updateExNumbers(){
+  const ex = CUR, t = exTotals(ex);
+  ex.sections.forEach((s,si) => {
+    s.items.forEach((it,ii) => { const c = document.querySelector(`[data-amt="${si}-${ii}"]`); if (c) c.textContent = f0(num(it.qty)*num(it.rate)); });
+    const st = t.secTot[si];
+    const set = (a,v) => { const c = document.querySelector(`[${a}="${si}"]`); if (c) c.textContent = f0(v); };
+    set('data-sub', st.sub); set('data-fee', st.fee); set('data-tot', st.total);
+  });
+  renderExSummary();
+}
+function renderExSummary(){
+  const ex = CUR, t = exTotals(ex);
+  $('#exSummary').innerHTML = summaryTable(t.secTot, t.sum, t.sumSub, t.sumFee, t.contAmt, t.grand, ex.cont);
+}
+document.addEventListener('input', e => {
+  const el = e.target;
+  if (!CUR) return;
+  if (el.dataset.f){
+    const it = CUR.sections[+el.dataset.si].items[+el.dataset.ii], f = el.dataset.f;
+    if (f === 'desc' || f === 'unit') { it[f] = el.value; saveExtracts(); return; }
+    it[f] = el.value === '' ? 0 : +el.value;
+    if (!it.added){
+      const si = el.dataset.si, ii = el.dataset.ii, ch = num(it[f]) !== it[f+'0'];
+      el.classList.toggle('changed', ch);
+      const w = document.querySelector(`[data-was="${f}-${si}-${ii}"]`); if (w) w.textContent = ch ? 'was ' + (f === 'qty' ? fq(it.qty0) : f0(it.rate0)) : '';
+      const u = document.querySelector(`[data-undo="${si}-${ii}"]`); if (u) u.style.visibility = isAdj(it) ? '' : 'hidden';
+    }
+    saveExtracts(); updateExNumbers();
+  } else if (el.dataset.ex){
+    const k = el.dataset.ex;
+    CUR[k] = (k === 'fee' || k === 'cont') ? num(el.value)/100 : el.value;
+    saveExtracts();
+    if (k === 'fee' || k === 'cont'){ updateExNumbers(); document.querySelectorAll('[data-feelbl]').forEach(c => c.textContent = `Fees (${pct(CUR.fee)})`); }
+  }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.opt){
+    printOpts[el.dataset.opt] = el.type === 'checkbox' ? el.checked : el.value; savePO();
+    if (el.dataset.opt === 'content' && $('#outBtns')) $('#outBtns').innerHTML = outButtons();
+  }
+});
+
+/* ===================================================== OUTPUT: shared document model */
+function docModel(ex){
+  const t = exTotals(ex), hz = printOpts.hideZero;
+  const secs = ex.sections.map((s,si) => {
+    let n = 0;
+    const lines = s.items.filter(it => !it.removed).map(it => ({...it, ref: s.k + (++n), mark: it.added || isAdj(it)}))
+      .filter(l => !hz || num(l.qty)*num(l.rate) !== 0);
+    return {...s, st: t.secTot[si], lines};
+  }).filter(s => !hz || s.st.total !== 0);
+  return {t, secs};
+}
+function pageCSS(){ return `@page{size:A4 ${printOpts.orient};margin:12mm}`; }
+function printHead(ex, title){
+  return `<div class="ph"><h1>${esc(ex.project)}</h1><div>Client: <b>${esc(ex.client)}</b> &nbsp;|&nbsp; Prepared by: ${esc(ex.prepared)} &nbsp;|&nbsp; Date: ${esc(ex.date)}</div></div><h2 class="dt">${title}</h2>`;
+}
+function boqHTML(ex, M){
+  const mk = printOpts.marks;
+  const colgroup = '<colgroup><col style="width:7%"><col><col style="width:11%"><col style="width:10%"><col style="width:13%"><col style="width:16%"></colgroup>';
+  const thead = '<thead><tr><th>Ref</th><th>Description</th><th>Unit</th><th class="num">Qty</th><th class="num">Rate (N)</th><th class="num">Amount (N)</th></tr></thead>';
+  let h = printHead(ex, 'BILL OF QUANTITIES');
+  M.secs.forEach(s => {
+    h += `<div class="sec-block"><table>${colgroup}${thead}<tbody><tr class="sec"><td>${s.k}</td><td colspan="5">${esc(s.t)}</td></tr>`;
+    s.lines.forEach(l => h += `<tr><td>${l.ref}</td><td>${esc(l.desc)}${mk&&l.mark?' <span class="mark">*</span>':''}</td><td>${esc(l.unit)}</td><td class="num">${fq(num(l.qty))}</td><td class="num">${f0(num(l.rate))}</td><td class="num">${f0(num(l.qty)*num(l.rate))}</td></tr>`);
+    h += `<tr><td></td><td colspan="4">Subtotal</td><td class="num">${f0(s.st.sub)}</td></tr><tr><td></td><td colspan="4">Arch/Engr/Mgt fees (${pct(ex.fee)})</td><td class="num">${f0(s.st.fee)}</td></tr><tr class="tot"><td></td><td colspan="4">SECTION TOTAL</td><td class="num">${f0(s.st.total)}</td></tr></tbody></table></div>`;
+  });
+  if (mk) h += `<p style="font-size:9pt" class="mark">* adjusted or added manually</p>`;
+  return h;
+}
+function summaryHTML(ex, M){
+  const t = M.t;
+  let h = printHead(ex, 'SUMMARY OF ESTIMATE') + `<div class="sec-block"><table><colgroup><col style="width:8%"><col><col style="width:26%"></colgroup><thead><tr><th>Ref</th><th>Section</th><th class="num">Amount (N)</th></tr></thead><tbody>`;
+  M.secs.forEach(s => h += `<tr><td>${s.k}</td><td>${esc(s.t)}</td><td class="num">${f0(s.st.total)}</td></tr>`);
+  h += `<tr class="tot"><td></td><td>Sum of sections</td><td class="num">${f0(t.sum)}</td></tr>`;
+  if (t.contAmt) h += `<tr><td></td><td>Contingency (${pct(ex.cont)})</td><td class="num">${f0(t.contAmt)}</td></tr>`;
+  h += `<tr class="grand"><td></td><td>GRAND TOTAL</td><td class="num">N ${f0(t.grand)}</td></tr></tbody></table></div>`;
+  if (ex.note) h += `<p style="margin-top:10px">${esc(ex.note)}</p>`;
+  return h;
+}
+function doPrint(part){
+  const ex = CUR, M = docModel(ex), c = printOpts.content;
+  let h = '';
+  if (part === 'boq' || c === 'boq') h = boqHTML(ex, M);
+  else if (part === 'summary' || c === 'summary') h = summaryHTML(ex, M);
+  else h = boqHTML(ex, M) + `<div class="brk">${summaryHTML(ex, M)}</div>`;
+  $('#pageStyle').textContent = pageCSS();
+  $('#printDoc').innerHTML = h;
+  setTimeout(() => window.print(), 60);
+}
+
+/* ---------- PDF with smart section breaks ---------- */
+function pdfLib(){ return window.jspdf && window.jspdf.jsPDF; }
+function newDoc(){ return new (pdfLib())({unit:'pt', format:'a4', orientation: printOpts.orient}); }
+const P = {M:36, TOP:100, BOT:40, NAVY:[31,56,100], BAND:[230,236,246]};
+function boqColumns(doc){
+  const W = doc.internal.pageSize.getWidth() - 2*P.M, land = printOpts.orient === 'landscape';
+  return {0:{cellWidth:land?40:30}, 2:{cellWidth:land?80:62}, 3:{halign:'right', cellWidth:land?70:50}, 4:{halign:'right', cellWidth:land?90:66}, 5:{halign:'right', cellWidth:land?110:82}};
+}
+function sectionTable(doc, ex, s, startY, showHead){
+  const mk = printOpts.marks, pd = n => f0(n);
+  const body = [[{content:s.k, styles:{fillColor:P.BAND, fontStyle:'bold', textColor:P.NAVY}}, {content:s.t, colSpan:5, styles:{fillColor:P.BAND, fontStyle:'bold', textColor:P.NAVY}}]];
+  s.lines.forEach(l => body.push([l.ref, (l.desc || '') + (mk && l.mark ? ' *' : ''), l.unit || '', fq(num(l.qty)), pd(num(l.rate)), pd(num(l.qty)*num(l.rate))]));
+  body.push(['', {content:'Subtotal', colSpan:4}, pd(s.st.sub)]);
+  body.push(['', {content:`Arch/Engr/Mgt fees (${pct(ex.fee)})`, colSpan:4}, pd(s.st.fee)]);
+  body.push(['', {content:'SECTION TOTAL', colSpan:4, styles:{fontStyle:'bold'}}, {content:pd(s.st.total), styles:{fontStyle:'bold'}}]);
+  doc.autoTable({
+    startY, margin:{left:P.M, right:P.M, top:P.TOP, bottom:P.BOT}, showHead,
+    head:[['Ref','Description','Unit','Qty','Rate (N)','Amount (N)']], body, rowPageBreak:'avoid',
+    styles:{font:'helvetica', fontSize:8.8, cellPadding:3.2, lineColor:[210,214,222], lineWidth:0.4},
+    headStyles:{fillColor:P.NAVY, textColor:255, fontStyle:'bold'},
+    columnStyles: boqColumns(doc),
+    didParseCell: d => { if (d.section==='head' && d.column.index>=3) d.cell.styles.halign='right'; }
+  });
+  return doc.lastAutoTable.finalY;
+}
+function measureSection(ex, s){
+  const t = newDoc();
+  const end = sectionTable(t, ex, s, P.TOP, 'firstPage');
+  return {h: end - P.TOP, pages: t.internal.getNumberOfPages()};
+}
+function drawBOQ(doc, ex, M){
+  const H = doc.internal.pageSize.getHeight(), limit = H - P.BOT;
+  let y = P.TOP, startPage = doc.internal.getNumberOfPages();
+  M.secs.forEach(s => {
+    const m = measureSection(ex, s), atTop = Math.abs(y - P.TOP) < 1;
+    if (!atTop && (m.pages > 1 || y + m.h > limit)){ doc.addPage(); y = P.TOP; }
+    const top = Math.abs(y - P.TOP) < 1;
+    y = sectionTable(doc, ex, s, y, top ? 'everyPage' : 'never') + 8;
+    if (top === false && m.pages > 1) {} // not reachable: long sections always start at the top
+  });
+  if (printOpts.marks){ doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(150,100,0); if (y + 14 > limit){ doc.addPage(); y = P.TOP; } doc.text('* adjusted or added manually', P.M, y + 6); doc.setTextColor(0); }
+  return [startPage, doc.internal.getNumberOfPages()];
+}
+function drawSummary(doc, ex, M){
+  const t = M.t, startPage = doc.internal.getNumberOfPages();
+  const body = M.secs.map(s => [s.k, s.t, f0(s.st.total)]);
+  body.push(['', {content:'Sum of sections', styles:{fontStyle:'bold'}}, {content:f0(t.sum), styles:{fontStyle:'bold'}}]);
+  if (t.contAmt) body.push(['', `Contingency (${pct(ex.cont)})`, f0(t.contAmt)]);
+  body.push([{content:'', styles:{fillColor:P.NAVY}}, {content:'GRAND TOTAL', styles:{fillColor:P.NAVY, textColor:255, fontStyle:'bold'}}, {content:'N ' + f0(t.grand), styles:{fillColor:P.NAVY, textColor:255, fontStyle:'bold'}}]);
+  doc.autoTable({
+    startY:P.TOP, margin:{left:P.M, right:P.M, top:P.TOP, bottom:P.BOT},
+    head:[['Ref','Section','Amount (N)']], body, rowPageBreak:'avoid',
+    styles:{font:'helvetica', fontSize:10, cellPadding:5, lineColor:[210,214,222], lineWidth:0.4},
+    headStyles:{fillColor:P.NAVY, textColor:255},
+    columnStyles:{0:{cellWidth:40}, 2:{halign:'right', cellWidth:140}},
+    didParseCell: d => { if (d.section==='head' && d.column.index===2) d.cell.styles.halign='right'; }
+  });
+  if (ex.note){ doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(0); doc.text(doc.splitTextToSize(ex.note, doc.internal.pageSize.getWidth() - 2*P.M), P.M, doc.lastAutoTable.finalY + 20); }
+  return [startPage, doc.internal.getNumberOfPages()];
+}
+function decorate(doc, ex, ranges){
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), n = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= n; i++){
+    doc.setPage(i);
+    const r = ranges.find(([a,b]) => i >= a && i <= b), title = r ? r[2] : '';
+    const cont = r && i > r[0] ? ' (continued)' : '';
+    doc.setTextColor(0); doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.text(ex.project || 'Estimate', P.M, 44);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5);
+    doc.text(`Client: ${ex.client}    |    Prepared by: ${ex.prepared}    |    Date: ${ex.date}`, P.M, 60);
+    doc.setLineWidth(1.2); doc.line(P.M, 68, W - P.M, 68);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11.5); doc.text(title + cont, P.M, 86);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(110);
+    doc.text(ex.name || '', P.M, H - 18); doc.text(`Page ${i} of ${n}`, W - P.M, H - 18, {align:'right'});
+  }
+}
+const fileBase = ex => (ex.name || 'estimate').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_');
+function buildPDF(ex, parts){
+  const M = docModel(ex), doc = newDoc(), ranges = [];
+  parts.forEach((p, i) => {
+    if (i > 0) doc.addPage();
+    if (p === 'boq') ranges.push([...drawBOQ(doc, ex, M), 'BILL OF QUANTITIES']);
+    else ranges.push([...drawSummary(doc, ex, M), 'SUMMARY OF ESTIMATE']);
+  });
+  decorate(doc, ex, ranges);
+  return doc;
+}
+function doPDF(){
+  if (!pdfLib()){ toast('PDF library not loaded (offline?). Use Print → Save as PDF.'); return; }
+  const ex = CUR, c = printOpts.content, base = fileBase(ex);
+  if (c === 'separate'){
+    buildPDF(ex, ['boq']).save(base + '_BOQ.pdf');
+    setTimeout(() => buildPDF(ex, ['summary']).save(base + '_Summary.pdf'), 700);
+  } else if (c === 'boq') buildPDF(ex, ['boq']).save(base + '_BOQ.pdf');
+  else if (c === 'summary') buildPDF(ex, ['summary']).save(base + '_Summary.pdf');
+  else buildPDF(ex, ['boq','summary']).save(base + '.pdf');
+}
+function doCSV(){
+  const ex = CUR, t = exTotals(ex);
+  const rows = [['Ref','Description','Unit','Qty','Rate','Amount']];
+  ex.sections.forEach((s,si) => { rows.push([s.k, s.t]); let n = 0;
+    s.items.forEach(it => { if (!it.removed) rows.push([s.k + (++n), it.desc, it.unit, num(it.qty), num(it.rate), num(it.qty)*num(it.rate)]); });
+    rows.push(['', 'Subtotal', '', '', '', t.secTot[si].sub]); rows.push(['', 'Fees', '', '', '', t.secTot[si].fee]); rows.push(['', 'Section total', '', '', '', t.secTot[si].total]); });
+  rows.push([]); rows.push(['', 'Sum of sections', '', '', '', t.sum]); rows.push(['', 'Contingency', '', '', '', t.contAmt]); rows.push(['', 'GRAND TOTAL', '', '', '', t.grand]);
+  const csv = rows.map(r => r.map(v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g,'""') + '"' : v).join(',')).join('\n');
+  download(new Blob(['﻿' + csv], {type:'text/csv'}), fileBase(ex) + '.csv');
+}
+function download(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+
+/* ===================================================== ACTIONS */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act],[data-tab]'); if (!b) return;
+  if (b.dataset.tab){ showTab(b.dataset.tab); return; }
+  const a = b.dataset.act, id = b.dataset.id;
+  if (a === 'extract'){ const ex = makeExtract(); showTab('extracts'); openExtract(ex.id); toast('Extract created'); }
+  if (a === 'openEx') openExtract(id);
+  if (a === 'dupEx'){ const src = EX.find(x => x.id === id); const c = JSON.parse(JSON.stringify(src)); c.id = uid(); c.name = src.name + ' (copy)'; c.created = new Date().toISOString(); EX.unshift(c); saveExtracts(); renderExList(); }
+  if (a === 'delEx'){ if (confirm('Delete this extract?')){ EX = EX.filter(x => x.id !== id); saveExtracts(); renderExList(); } }
+  if (a === 'backEx') closeExtract();
+  if (a === 'resetEx'){ if (confirm('Undo every change in this extract? Added rows are deleted and removed rows come back.')){ CUR.sections.forEach(s => { s.items = s.items.filter(it => !it.added); s.items.forEach(it => { it.qty = it.qty0; it.rate = it.rate0; delete it.removed; }); }); saveExtracts(); renderExBody(); renderExSummary(); } }
+  if (a === 'removeLine'){ const s = CUR.sections[+b.dataset.si], it = s.items[+b.dataset.ii]; if (it.added) s.items.splice(+b.dataset.ii, 1); else it.removed = true; saveExtracts(); renderExBody(); renderExSummary(); }
+  if (a === 'addLine'){ const s = CUR.sections[+b.dataset.si]; s.items.push({desc:'', unit:'', qty:1, rate:0, qty0:1, rate0:0, added:true}); saveExtracts(); renderExBody(); renderExSummary();
+    setTimeout(() => { const el = document.querySelector(`input[data-si="${b.dataset.si}"][data-ii="${s.items.length-1}"][data-f="desc"]`); if (el){ el.focus(); el.scrollIntoView({block:'center'}); } }, 30); }
+  if (a === 'restoreSec'){ e.preventDefault(); CUR.sections[+b.dataset.si].items.forEach(it => delete it.removed); saveExtracts(); renderExBody(); renderExSummary(); }
+  if (a === 'resetLine'){ const it = CUR.sections[+b.dataset.si].items[+b.dataset.ii]; it.qty = it.qty0; it.rate = it.rate0; saveExtracts(); renderExBody(); renderExSummary(); }
+  if (a === 'print') doPrint(b.dataset.part);
+  if (a === 'pdf') doPDF();
+  if (a === 'csv') doCSV();
+  if (a === 'close') $('#menuDlg').close();
+  if (a === 'export'){ download(new Blob([JSON.stringify({app:'estimate-builder', version:1, exported:new Date().toISOString(), settings:S, extracts:EX}, null, 1)], {type:'application/json'}), `estimate-data-${today()}.json`); }
+  if (a === 'import') $('#importFile').click();
+  if (a === 'reset'){ if (confirm('Reset inputs, rates and assumptions to the defaults? Extracts are kept.')){ S = defaultSettings(); store.set(KEY_SET, S); renderAll(); $('#menuDlg').close(); toast('Reset to defaults'); } }
+});
+$('#menuBtn').addEventListener('click', () => $('#menuDlg').showModal());
+$('#importFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try{
+    const data = JSON.parse(await f.text());
+    if (!data.settings) throw new Error('Not an Estimate Builder file');
+    const fresh = defaultSettings();
+    for (const g of ['inputs','assumptions','rates']) for (const k in fresh[g]) if (data.settings[g] && k in data.settings[g]) fresh[g][k] = data.settings[g][k];
+    S = fresh; store.set(KEY_SET, S);
+    if (Array.isArray(data.extracts)){ const have = new Set(EX.map(x => x.id)); data.extracts.forEach(x => { if (!have.has(x.id)) EX.push(x); }); saveExtracts(); }
+    renderAll(); $('#menuDlg').close(); toast('Data imported');
+  }catch(err){ alert('Could not import: ' + err.message); }
+  e.target.value = '';
+});
+function showTab(t){
+  document.querySelectorAll('nav.tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('on', p.id === 'p-' + t));
+  if (t === 'takeoff') renderTakeoff();
+  if (t === 'boq') renderBOQ();
+  if (t === 'summary') renderSummary();
+  if (t === 'extracts' && !CUR) renderExList();
+  try{ localStorage.setItem('estimateBuilder.tab', t); }catch(e){}
+  window.scrollTo(0,0);
+}
+function renderAll(){ renderInputs(); renderRates(); renderAssumptions(); refreshLive(); renderExList(); }
+renderAll();
+try{ const t = localStorage.getItem('estimateBuilder.tab'); if (t && document.getElementById('p-'+t)) showTab(t); }catch(e){}
+</script>
+</body>
+</html>
