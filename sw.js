@@ -1,4 +1,4 @@
-const CACHE = 'estimate-builder-v1';
+const CACHE = 'estimate-builder-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './lib/jspdf.umd.min.js', './lib/jspdf.plugin.autotable.min.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
