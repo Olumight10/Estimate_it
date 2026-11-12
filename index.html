@@ -175,6 +175,17 @@ tr.gone td{background:#fbf3f2;color:var(--muted)}
 .lg.chg{background:var(--edit);color:#7a5400;border:1px solid var(--edit-line)}.lg.add{background:#e3f4ea;color:#1e7b45}.lg.mov{background:#e6ecf6;color:#2c4a80}.lg.rem{background:#fde8e6;color:var(--bad)}
 .grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 .std-card .field{border-top:0}
+/* source dialog */
+#srcDlg{max-width:1150px;width:calc(100% - 20px);height:calc(100% - 30px);max-height:none}
+#srcDlg[open]{display:flex}
+.src-dlg{display:flex;flex-direction:column;width:100%;height:100%;padding:0!important}
+.src-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:14px 16px 8px}
+.src-tabs{display:flex;gap:4px;overflow-x:auto;padding:0 12px;border-bottom:1px solid var(--line)}
+.src-tabs button{border:0;background:none;padding:9px 12px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;color:var(--muted);font-weight:600}
+.src-tabs button.on{color:var(--navy);border-bottom-color:var(--navy)}
+.src-body{flex:1;overflow:auto;padding:14px 16px;background:var(--bg)}
+.src-foot{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--line)}
+tr.srcdiff td{background:var(--edit)}
 /* print document */
 #printDoc{display:none}
 @media print{
@@ -267,7 +278,7 @@ tr.gone td{background:#fbf3f2;color:var(--muted)}
     <div id="exListView">
       <h2>Extracts</h2>
       <p class="lead">An extract is a frozen copy of the BOQ and Summary. Edit its quantities and rates freely, then print or save as PDF. Edits stay in the extract; the live system never sees them.</p>
-      <div class="toolbar"><button class="btn primary" data-act="extract">New extract</button></div>
+      <div class="toolbar"><button class="btn primary" data-act="extract">New extract</button><button class="btn" data-act="exportAll">Export all extracts</button><button class="btn" data-act="import">Import extracts or backup</button></div>
       <div class="card ex-list" id="exList"></div>
     </div>
     <div id="exEditView" style="display:none"></div>
@@ -282,19 +293,25 @@ tr.gone td{background:#fbf3f2;color:var(--muted)}
   <div class="actions">
     <button class="btn primary" data-act="install" id="installBtn" hidden>Install app on this device</button>
     <p class="muted" id="installHint" style="margin:0;font-size:13px"></p>
-    <button class="btn" data-act="export">Export data file (.json)</button>
-    <button class="btn" data-act="import">Import data file</button>
+    <button class="btn" data-act="export">Export full backup (inputs, rates, assumptions &amp; all extracts)</button>
+    <button class="btn" data-act="import">Import a backup or extracts file</button>
     <button class="btn danger" data-act="reset">Reset inputs, rates &amp; assumptions to defaults</button>
     <button class="btn" data-act="close">Close</button>
   </div>
   <p class="muted" id="storageInfo" style="font-size:12px;margin:12px 0 0"></p>
-  <p class="muted" style="font-size:12px;margin:10px 0 0;border-top:1px solid var(--line);padding-top:10px">Estimate Builder v1.3 &middot; &copy; Porpos Solutions. Licensed software: use is governed by the signed Software Licence Agreement. Copying or redistribution is not permitted.</p>
+  <p class="muted" style="font-size:12px;margin:10px 0 0;border-top:1px solid var(--line);padding-top:10px">Estimate Builder v1.4 &middot; &copy; Porpos Solutions. Licensed software: use is governed by the signed Software Licence Agreement. Copying or redistribution is not permitted.</p>
   <div>
   </div>
   <input type="file" id="importFile" accept=".json,application/json" hidden>
 </div></dialog>
 <div class="toast" id="toast"></div>
 <div id="popMenu" class="pop" hidden></div>
+<dialog id="srcDlg"><div class="dlg src-dlg">
+  <div class="src-head"><div><h3 id="srcTitle">Source</h3><p class="muted" id="srcSub" style="margin:0;font-size:13px"></p></div><button class="btn" data-act="srcClose">Close</button></div>
+  <div class="src-tabs" id="srcTabs"></div>
+  <div class="src-body" id="srcBody"></div>
+  <div class="src-foot" id="srcFoot"></div>
+</div></dialog>
 <div id="dropLine" hidden></div>
 <dialog id="histDlg"><div class="dlg">
   <h3>Snapshot history</h3>
@@ -492,10 +509,11 @@ function compute(I, A, st, LT){
   return {q, T};
 }
 
-function nums(group){ const o = {}; for (const k in S[group]) o[k] = num(S[group][k]); return o; }
-function buildLive(){
-  const I = nums('inputs'), A = nums('assumptions'), R = S.rates;
-  const st = storeys(), LT = letters(st);
+function nums(group, set){ set = set || S; const o = {}; for (const k in set[group]) o[k] = num(set[group][k]); return o; }
+function buildLive(set){
+  set = set || S;
+  const I = nums('inputs', set), A = nums('assumptions', set), R = set.rates;
+  const st = (BTYPES[set.inputs.btype] || BTYPES.one).storeys, LT = letters(st);
   const {q, T} = compute(I, A, st, LT);
   const sections = activeDefs(st).map(s => {
     const items = s.items.map((it,i) => {
@@ -624,8 +642,8 @@ function refreshLive(){
   if (cur === 'boq') renderBOQ();
   if (cur === 'summary') renderSummary();
 }
-function renderTakeoff(){
-  const L = LIVE; let h = '';
+function renderTakeoff(L, sel){
+  L = L || LIVE; let h = '';
   for (const k in L.T){
     const s = L.T[k];
     h += `<div class="card"><h3>${esc(s.title)}</h3>`;
@@ -646,10 +664,10 @@ function renderTakeoff(){
     }
     h += `</div>`;
   }
-  $('#takeoffView').innerHTML = h;
+  $(sel || '#takeoffView').innerHTML = h;
 }
-function renderBOQ(){
-  const L = LIVE; let h = `<div class="card"><div class="scroll"><table><thead><tr><th>Ref</th><th>Description</th><th class="hide-sm">Unit</th><th class="num hide-sm">Calculated</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount (₦)</th></tr></thead><tbody>`;
+function renderBOQ(L, sel){
+  L = L || LIVE; let h = `<div class="card"><div class="scroll"><table><thead><tr><th>Ref</th><th>Description</th><th class="hide-sm">Unit</th><th class="num hide-sm">Calculated</th><th class="num">Qty</th><th class="num">Rate</th><th class="num">Amount (₦)</th></tr></thead><tbody>`;
   L.sections.forEach((s,i) => {
     const t = L.secTot[i];
     h += `<tr class="sec"><td>${s.k}</td><td colspan="6">${esc(s.t)}</td></tr>`;
@@ -659,7 +677,7 @@ function renderBOQ(){
           <tr class="tot"><td></td><td colspan="5">Section total</td><td class="num">${f0(t.total)}</td></tr>`;
   });
   h += `</tbody></table></div></div>`;
-  $('#boqView').innerHTML = h;
+  $(sel || '#boqView').innerHTML = h;
 }
 function summaryTable(secTot, sum, sumSub, sumFee, contAmt, grand, cont){
   let run = 0, h = `<div class="scroll"><table><thead><tr><th>Ref</th><th>Section</th><th class="num hide-sm">Subtotal</th><th class="num hide-sm">Fees</th><th class="num">Total (₦)</th><th class="num hide-sm">%</th><th class="num hide-sm">Running total</th></tr></thead><tbody>`;
@@ -681,6 +699,7 @@ function renderSummary(){
 /* ===================================================== EXTRACTS (v3: editable structure, change tracking, snapshots, standards) */
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 function today(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+const APP_VERSION = '1.4', FILE_FORMAT = 3;
 const EX_VER = 2, SNAP_MAX = 20, LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const clone = x => JSON.parse(JSON.stringify(x));
 const nowISO = () => new Date().toISOString();
@@ -842,7 +861,8 @@ function makeExtract(){
     v: EX_VER, id: uid(), name: uniqueName(defaultExName()), created: nowISO(), updated: nowISO(),
     btype: S.inputs.btype || 'one',
     project: S.inputs.proj || '', client: S.inputs.client || '', prepared: S.inputs.prep || '', date: today(),
-    fee: L.I.fee, cont: L.I.cont, note: '', basedOn: null, sections, snapshots: []
+    fee: L.I.fee, cont: L.I.cont, note: '', basedOn: null, sections, snapshots: [],
+    source: {at: nowISO(), appVersion: APP_VERSION, settings: clone(S)}
   };
   ex.diff = diffOf(ex);
   EX.unshift(ex); saveExtracts(true);
@@ -893,7 +913,7 @@ window.addEventListener('pagehide', flushExtracts);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushExtracts(); });
 
 /* ---------- snapshots ---------- */
-function exCore(ex){ const c = clone(ex); delete c.snapshots; return c; }
+function exCore(ex){ const c = clone(ex); delete c.snapshots; delete c.source; return c; }
 function snapshot(ex, label){
   const js = JSON.stringify(exCore(ex));
   ex.snapshots = ex.snapshots || [];
@@ -905,7 +925,7 @@ function snapshot(ex, label){
 }
 function restoreSnapshot(ex, snap){
   snapshot(ex, 'Before restoring an older snapshot');
-  const data = JSON.parse(snap.js), keep = {id: ex.id, snapshots: ex.snapshots, name: ex.name};
+  const data = JSON.parse(snap.js), keep = {id: ex.id, snapshots: ex.snapshots, name: ex.name, source: ex.source};
   Object.keys(ex).forEach(k => delete ex[k]);
   Object.assign(ex, migrateEx(data), keep);
   saveExtracts(true);
@@ -916,10 +936,11 @@ function renderExList(){
   if (!EX.length){ $('#exList').innerHTML = '<div class="empty">No extracts yet. Make one from the BOQ when you are ready to print or adjust.</div>'; return; }
   $('#exList').innerHTML = EX.map(ex => { const t = exTotals(ex);
     return `<div class="item"><div class="meta"><b>${esc(ex.name)}</b>
-      <span class="muted" style="font-size:13px">${esc(btypeLabel(ex.btype))} · ${esc(ex.client)} · ${naira(t.grand)} · updated ${esc(when(ex.updated))}</span>
+      <span class="muted" style="font-size:13px">${esc(btypeLabel(ex.btype))} · ${esc(ex.client)} · ${naira(t.grand)} · updated ${esc(when(ex.updated))} · ${ex.source ? 'inputs recorded' : 'inputs not recorded'}</span>
       <span class="std-line">${ex.basedOn ? `Based on “${esc(ex.basedOn.name)}” · ` : ''}Difference from default: ${esc(diffText(ex.diff, true))}${ex.snapshots && ex.snapshots.length ? ` · ${ex.snapshots.length} snapshot${ex.snapshots.length>1?'s':''}` : ''}</span></div>
       <button class="btn primary" data-act="openEx" data-id="${ex.id}">Open</button>
       <button class="btn" data-act="renameEx" data-id="${ex.id}">Rename</button>
+      <button class="btn" data-act="exportOne" data-id="${ex.id}">Export</button>
       <button class="btn" data-act="dupEx" data-id="${ex.id}">Duplicate</button>
       <button class="btn danger" data-act="delEx" data-id="${ex.id}">Delete</button></div>`; }).join('');
 }
@@ -954,11 +975,12 @@ function renderExEditor(){
   const n = (ex.snapshots || []).length, bo = ex.basedOn || {};
   const others = EX.filter(x => x.id !== ex.id && x.btype === ex.btype).length;
   $('#exEditView').innerHTML = `<div class="toolbar"><button class="btn" data-act="backEx">&larr; All extracts</button>
+      <button class="btn" data-act="source">Source &amp; inputs</button><button class="btn" data-act="exportOne" data-id="${ex.id}">Export</button>
       <button class="btn" data-act="snapNow">Save snapshot</button><button class="btn" data-act="history">History (<span id="snapCount">${n}</span>)</button>
       <span id="outBtns" style="display:contents">${outButtons()}</span>
       <button class="btn" data-act="bulkMenu">Restore &#9662;</button></div>
     <div class="card"><div class="field"><label>Extract name</label><div class="row"><input class="ex-name" data-ex="name" type="text" value="${esc(ex.name)}"></div>
-      <span class="src">${esc(btypeLabel(ex.btype))} · created ${esc(when(ex.created))} · saved automatically</span>
+      <span class="src">${esc(btypeLabel(ex.btype))} · created ${esc(when(ex.created))} · saved automatically · ${ex.source ? `<a href="#" data-act="source">inputs recorded ${esc(when(ex.source.at))}</a>` : 'inputs not recorded (made before v1.4)'}</span>
       <span class="std-line" id="exDiff"></span></div></div>
     <div class="card std-card"><h3>Standard of measurement</h3>
       <div class="field"><label for="stdSel">Start this extract from</label><div class="row"><select id="stdSel" class="bsel">${stdOptions(ex)}</select></div>
@@ -1272,6 +1294,97 @@ function renderHistory(){
   const c = $('#snapCount'); if (c) c.textContent = list.length;
 }
 
+/* ---------- source of an extract: the inputs that produced it ---------- */
+function mergeSettings(saved){
+  const out = defaultSettings();
+  if (saved) for (const g of ['inputs','assumptions','rates']) if (saved[g]) for (const k in out[g]) if (k in saved[g]) out[g][k] = saved[g][k];
+  return out;
+}
+let SRC_TAB = 'inputs';
+const fmtSet = (g, k, v, meta) => {
+  if (v === null || v === undefined || v === '') return '—';
+  if (g === 'inputs' && k === 'btype') return btypeLabel(v);
+  if (g === 'inputs' && (k === 'fee' || k === 'cont')) return pct(v);
+  if (g === 'assumptions' && meta && meta.unit === '%') return pct(v);
+  if (typeof v === 'string') return esc(v);
+  return g === 'rates' ? nf0.format(v) : fq(+v);
+};
+function srcTable(g, set){
+  const meta = g === 'inputs' ? DEFAULTS.Inputs : g === 'assumptions' ? DEFAULTS.Assumptions : DEFAULTS.Rates;
+  const keyOf = m => g === 'rates' ? m.code : m.key;
+  let h = '', diffs = 0;
+  for (const [grp, rows] of groupBy(meta)){
+    h += `<div class="card"><h3>${esc(grp)}</h3><div class="scroll"><table><thead><tr><th>${g === 'rates' ? 'Item' : g === 'inputs' ? 'Input' : 'Assumption'}</th><th class="num">In this extract</th><th class="hide-sm">Unit</th><th class="num">Current app value</th></tr></thead><tbody>`;
+    rows.forEach(m => { const k = keyOf(m), v = set[g][k], cur = S[g][k], same = String(v ?? '') === String(cur ?? '');
+      if (!same) diffs++;
+      h += `<tr class="${same ? '' : 'srcdiff'}"><td>${esc(m.label)}</td><td class="num"><b>${fmtSet(g, k, v, m)}</b></td><td class="hide-sm muted">${esc(g === 'inputs' && (k === 'fee' || k === 'cont') ? '%' : (m.unit || ''))}</td><td class="num ${same ? 'muted' : ''}">${same ? 'same' : fmtSet(g, k, cur, m)}</td></tr>`; });
+    h += `</tbody></table></div></div>`;
+  }
+  return {h, diffs};
+}
+function openSource(tab){
+  const ex = CUR; if (!ex) return;
+  SRC_TAB = tab || SRC_TAB;
+  $('#srcTitle').textContent = 'Source of “' + ex.name + '”';
+  if (!ex.source){
+    $('#srcSub').textContent = 'This extract was made before version 1.4, so the inputs that produced it were not recorded.';
+    $('#srcTabs').innerHTML = '';
+    $('#srcBody').innerHTML = `<div class="notice">If you are sure the app still has the same inputs, rates and assumptions that produced this extract, you can record them now as its source.</div>`;
+    $('#srcFoot').innerHTML = `<button class="btn" data-act="srcAttach">Record the current inputs as this extract’s source</button>`;
+    if (!$('#srcDlg').open) $('#srcDlg').showModal(); return;
+  }
+  const set = mergeSettings(ex.source.settings), L = buildLive(set);
+  const di = srcTable('inputs', set).diffs, da = srcTable('assumptions', set).diffs, dr = srcTable('rates', set).diffs;
+  $('#srcSub').textContent = `Recorded ${when(ex.source.at)} (app v${ex.source.appVersion || '?'}) · ${btypeLabel(set.inputs.btype)} · calculated total ${naira(L.grand)}. Rows that differ from the app’s current values are highlighted.`;
+  const tabs = [['inputs', `Inputs${di ? ` (${di} differ)` : ''}`], ['assumptions', `Assumptions${da ? ` (${da} differ)` : ''}`], ['rates', `Rates${dr ? ` (${dr} differ)` : ''}`], ['takeoff', 'Takeoff'], ['boq', 'BOQ (as calculated)'], ['summary', 'Summary (as calculated)']];
+  $('#srcTabs').innerHTML = tabs.map(([k, l]) => `<button class="${k === SRC_TAB ? 'on' : ''}" data-act="srcTab" data-k="${k}">${l}</button>`).join('');
+  const body = $('#srcBody');
+  if (SRC_TAB === 'inputs' || SRC_TAB === 'assumptions' || SRC_TAB === 'rates') body.innerHTML = srcTable(SRC_TAB, set).h;
+  else if (SRC_TAB === 'takeoff'){ body.innerHTML = '<div id="srcTake"></div>'; renderTakeoff(L, '#srcTake'); }
+  else if (SRC_TAB === 'boq'){ body.innerHTML = '<p class="muted" style="font-size:13px;margin:0 0 8px">The BOQ exactly as calculated from these inputs, before any changes made in the extract.</p><div id="srcBoq"></div>'; renderBOQ(L, '#srcBoq'); }
+  else body.innerHTML = `<div class="card"><h3>${esc(set.inputs.proj || '')} — ${esc(set.inputs.client || '')}</h3>${summaryTable(L.secTot, L.sum, L.sumSub, L.sumFee, L.contAmt, L.grand, L.I.cont)}</div>
+    <p class="muted" style="font-size:13px">This extract now totals ${naira(exTotals(ex).grand)} after its changes (${esc(diffText(diffOf(ex)))}).</p>`;
+  body.scrollTop = 0;
+  $('#srcFoot').innerHTML = `<button class="btn" data-act="srcLoad">Load these inputs, assumptions &amp; rates into the app</button><span class="muted" style="font-size:12.5px">Replaces the app’s current values so you can rework this job. Export a backup first if you need the current ones.</span>`;
+  if (!$('#srcDlg').open) $('#srcDlg').showModal();
+}
+
+/* ---------- export / import (moving extracts between devices and app versions) ---------- */
+function exportFile(kind, list, withSettings){
+  flushExtracts();
+  const data = {app:'estimate-builder', kind, format: FILE_FORMAT, appVersion: APP_VERSION, exported: nowISO(), count: list.length, extracts: list};
+  if (withSettings) data.settings = S;
+  return new Blob([JSON.stringify(data, null, 1)], {type:'application/json'});
+}
+async function importData(text){
+  let data;
+  try{ data = JSON.parse(text); }catch(e){ throw new Error('The file is not a valid data file.'); }
+  if (Array.isArray(data)) data = {extracts: data};
+  if (!data || (data.app && data.app !== 'estimate-builder')) throw new Error('This is not an Estimate Builder file.');
+  if (!data.extracts && !data.settings) throw new Error('The file contains no extracts or settings.');
+  const res = {added: 0, same: 0, copies: 0, bad: 0, settings: false};
+  if (data.settings && confirm('This file also contains inputs, assumptions and rates.\n\nOK = replace the app’s current inputs, assumptions and rates with the ones in the file.\nCancel = keep your current ones and import only the extracts.')){
+    S = mergeSettings(data.settings); store.set(KEY_SET, S); res.settings = true;
+  }
+  (Array.isArray(data.extracts) ? data.extracts : []).forEach(x => {
+    let m = null; try{ m = migrateEx(clone(x)); }catch(e){}
+    if (!m){ res.bad++; return; }
+    const have = EX.find(y => y.id === m.id);
+    if (!have){ EX.push(m); res.added++; return; }
+    if (JSON.stringify(exCore(have)) === JSON.stringify(exCore(m))){
+      if (!have.source && m.source) have.source = m.source;
+      const known = new Set((have.snapshots || []).map(s => s.at + s.js.length));
+      (m.snapshots || []).forEach(sn => { if (!known.has(sn.at + sn.js.length)) have.snapshots.push(sn); });
+      have.snapshots.sort((a, b) => b.at.localeCompare(a.at)); have.snapshots.length = Math.min(have.snapshots.length, SNAP_MAX);
+      res.same++; return;
+    }
+    m.id = uid(); m.name = uniqueName(m.name + ' (imported)'); EX.push(m); res.copies++;
+  });
+  EX.sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
+  saveExtracts(true);
+  return res;
+}
+
 /* ---------- actions for extracts ---------- */
 function exAction(a, b, e){
   const si = b.dataset.si !== undefined ? +b.dataset.si : null, ii = b.dataset.ii !== undefined ? +b.dataset.ii : null;
@@ -1282,6 +1395,13 @@ function exAction(a, b, e){
     case 'dupEx': { const src = EX.find(x => x.id === b.dataset.id); const c = clone(src); c.id = uid(); c.name = uniqueName(src.name + ' (copy)'); c.created = c.updated = nowISO(); c.snapshots = []; EX.unshift(c); saveExtracts(true); renderExList(); return true; }
     case 'delEx': if (confirm('Delete this extract and all its snapshots? This cannot be undone.')){ EX = EX.filter(x => x.id !== b.dataset.id); saveExtracts(true); renderExList(); } return true;
     case 'backEx': closeExtract(); return true;
+    case 'source': if (e) e.preventDefault(); openSource('inputs'); return true;
+    case 'srcTab': openSource(b.dataset.k); return true;
+    case 'srcClose': $('#srcDlg').close(); return true;
+    case 'srcAttach': if (confirm('Record the app’s current inputs, assumptions and rates as the source of this extract?')){ CUR.source = {at: nowISO(), appVersion: APP_VERSION, settings: clone(S), attached: true}; saveExtracts(true); openSource('inputs'); renderExEditor(); } return true;
+    case 'srcLoad': { const ex = CUR; if (confirm(`Replace the app’s current inputs, assumptions and rates with the ones that produced “${ex.name}”?`)){ S = mergeSettings(ex.source.settings); store.set(KEY_SET, S); renderInputs(); renderRates(); renderAssumptions(); refreshLive(); openSource(SRC_TAB); toast('Inputs, assumptions and rates loaded into the app'); } return true; }
+    case 'exportOne': { const ex = EX.find(x => x.id === b.dataset.id); download(exportFile('extract', [ex], false), fileBase(ex) + '.extract.json'); toast('Extract exported'); return true; }
+    case 'exportAll': if (!EX.length){ toast('No extracts to export'); return true; } download(exportFile('extracts', EX, false), `estimate-extracts-${today()}.json`); toast(`${EX.length} extract${EX.length>1?'s':''} exported`); return true;
     case 'applyStd': applyStdToCurrent(); return true;
     case 'snapNow': { const l = prompt('Snapshot name', 'Manual snapshot ' + when(nowISO())); if (l === null) return true; if (snapshot(CUR, l.trim() || 'Manual snapshot')) toast('Snapshot saved'); else toast('No changes since the last snapshot'); renderHistory(); return true; }
     case 'history': renderHistory(); $('#histDlg').showModal(); return true;
@@ -1510,7 +1630,7 @@ document.addEventListener('click', e => {
   if (a === 'csv') doCSV();
   if (a === 'close') $('#menuDlg').close();
   if (a === 'install' && deferredInstall){ deferredInstall.prompt(); deferredInstall.userChoice.finally(() => { deferredInstall = null; $('#installBtn').hidden = true; }); }
-  if (a === 'export'){ flushExtracts(); download(new Blob([JSON.stringify({app:'estimate-builder', version:2, exported:new Date().toISOString(), settings:S, extracts:EX}, null, 1)], {type:'application/json'}), `estimate-data-${today()}.json`); toast('Backup file downloaded'); }
+  if (a === 'export'){ download(exportFile('backup', EX, true), `estimate-backup-${today()}.json`); toast('Full backup downloaded'); }
   if (a === 'import') $('#importFile').click();
   if (a === 'reset'){ if (confirm('Reset inputs, rates and assumptions to the defaults? Extracts are kept.')){ S = defaultSettings(); store.set(KEY_SET, S); renderAll(); $('#menuDlg').close(); toast('Reset to defaults'); } }
 });
@@ -1523,14 +1643,16 @@ if (navigator.storage && navigator.storage.persist) navigator.storage.persist().
 $('#importFile').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   try{
-    const data = JSON.parse(await f.text());
-    if (!data.settings) throw new Error('Not an Estimate Builder file');
-    const fresh = defaultSettings();
-    for (const g of ['inputs','assumptions','rates']) for (const k in fresh[g]) if (data.settings[g] && k in data.settings[g]) fresh[g][k] = data.settings[g][k];
-    S = fresh; store.set(KEY_SET, S);
-    let added = 0;
-    if (Array.isArray(data.extracts)){ const have = new Set(EX.map(x => x.id)); data.extracts.forEach(x => { if (x && !have.has(x.id)){ const m = migrateEx(x); if (m){ EX.push(m); added++; } } }); saveExtracts(true); }
-    renderAll(); $('#menuDlg').close(); toast(`Data imported (${added} new extract${added===1?'':'s'})`);
+    const r = await importData(await f.text());
+    renderAll(); if ($('#menuDlg').open) $('#menuDlg').close();
+    if (CUR) renderExEditor();
+    const parts = [];
+    if (r.added) parts.push(`${r.added} extract${r.added>1?'s':''} added`);
+    if (r.copies) parts.push(`${r.copies} added as “(imported)” copies`);
+    if (r.same) parts.push(`${r.same} already here`);
+    if (r.bad) parts.push(`${r.bad} unreadable`);
+    if (r.settings) parts.push('inputs, assumptions & rates replaced');
+    toast('Import finished: ' + (parts.join(' · ') || 'nothing new'), 6000);
   }catch(err){ alert('Could not import: ' + err.message); }
   e.target.value = '';
 });
