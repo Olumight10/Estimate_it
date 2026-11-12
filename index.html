@@ -110,15 +110,19 @@ dialog .actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
   .hide-sm{display:none}
   th,td{padding:6px 7px;font-size:13.5px}
   .ex-table thead{display:none}
-  .ex-table tr.line{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;padding:10px 4px;border-top:1px solid var(--line)}
+  .ex-table tr.line{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px 8px;padding:10px 4px;border-top:1px solid var(--line)}
   .ex-table tr.line td{border:0;padding:0}
   .ex-table tr.line td.d{grid-column:1/-1;font-weight:600}
   .ex-table tr.line td.d .ref{display:inline;color:var(--muted);font-weight:400;margin-right:6px}
-  .ex-table tr.line td.u{display:none}
+  .ex-table tr.line td.u::before{content:"Unit";display:block;font-size:11px;color:var(--muted)}
   .ex-table tr.line td.q::before{content:"Qty";display:block;font-size:11px;color:var(--muted)}
   .ex-table tr.line td.r::before{content:"Rate";display:block;font-size:11px;color:var(--muted)}
-  .ex-table tr.line td.a{grid-column:1/-1;text-align:right;font-weight:700}
-  .ex-table tr.line td.x{grid-column:1/-1;text-align:right}
+  .ex-table tr.line td.a{grid-column:1/3;text-align:right;font-weight:700;align-self:center}
+  .ex-table tr.line td.x{grid-column:3;text-align:right}
+  .ex-table tr.sec{align-items:center}
+  .ex-table tr.sec td:nth-child(2){flex:1}
+  .ex-table tr.addsec{display:block}
+  .ex-table tr.addsec td{display:block;border:0}
   .ex-table tr.addrow{display:block;padding:8px 4px}
   .ex-table tr.addrow td{display:block;border:0;padding:0}
   .ex-table .w-qty,.ex-table .w-rate{width:auto}
@@ -126,6 +130,51 @@ dialog .actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
   .ex-table tr.sec td,.ex-table tr.sub td,.ex-table tr.tot td{border:0}
   .ex-table tr.sec td:empty,.ex-table tr.sub td:empty,.ex-table tr.tot td:empty{display:none}
 }
+/* extract editor v2 */
+.ex-name{font-size:17px;font-weight:700;color:var(--ink)!important}
+.std-line{display:block;font-size:12.5px;color:#2c4a80;margin-top:3px}
+.sec-title{width:100%;border:1px solid transparent;background:transparent;font-weight:700;color:var(--navy);padding:4px 6px;border-radius:6px;font-size:14px}
+.sec-title:hover{border-color:#c5d3ea;background:#fff}.sec-title:focus{border-color:#9cc0ff;background:#fff;outline:0}
+.sec-title.added{background:#e8f6ee}.sec-title.renamed{background:var(--edit)}
+.was-t{display:block;font-size:11px;color:#9a6b00;font-weight:400;padding-left:6px}
+tr.sec td.sl{width:40px}
+.cell-in.renamed{background:var(--edit);border-color:var(--edit-line)}
+.dwrap{display:flex;align-items:flex-start;gap:6px;flex-wrap:wrap}
+.dwrap .cell-in{flex:1;min-width:140px}
+.dwrap .was{flex-basis:100%;text-align:left;padding-left:26px}
+.ex-table td.u{width:110px}.ex-table td.u .cell-in{min-width:70px}
+.bsel{width:100%;min-width:0;max-width:100%;text-overflow:ellipsis}
+dialog .row{min-width:0}
+.drag{cursor:grab;color:#9aa3b5;font-size:18px;line-height:30px;padding:0 4px;touch-action:none;user-select:none;-webkit-user-select:none}
+.drag:hover{color:var(--navy)}
+tr.dragging{opacity:.4}
+body.is-dragging,body.is-dragging *{cursor:grabbing!important;user-select:none!important}
+#dropLine{position:fixed;height:4px;background:#2563eb;border-radius:2px;z-index:60;pointer-events:none;box-shadow:0 0 0 2px rgba(37,99,235,.2)}
+.pop{position:fixed;z-index:70;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:6px;min-width:220px}
+.pop button{display:block;width:100%;text-align:left;border:0;background:none;padding:9px 12px;border-radius:7px;cursor:pointer;font-size:14px}
+.pop button:hover{background:var(--soft)}.pop button.danger{color:var(--bad)}
+.pop hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+tr.addsec td{border-top:2px solid var(--line);padding:12px 10px}
+.hist-item{display:flex;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.hist-item>div{flex:1}
+/* change highlighting v3 */
+.was{display:block;font-size:11.5px;text-align:right;line-height:1.25;margin-top:2px}
+.was:empty{display:none}
+.was.chg{color:#9a6b00}.was.add{color:#1e7b45;font-weight:600}.was.mov{color:#2c4a80;font-weight:600}.was.rem{color:var(--bad)}
+.dwrap .was{text-align:left}
+tr.line.added td{background:#f0faf4}
+tr.line.is-mov td{box-shadow:inset 3px 0 0 #2c4a80}
+tr.line.is-mov td:not(:first-child){box-shadow:none}
+tr.sec.is-add td{background:#dff3e7}
+.sec-title.moved{box-shadow:inset 3px 0 0 #2c4a80}
+tr.gone td{background:#fbf3f2;color:var(--muted)}
+.gone-t{text-decoration:line-through;color:#8a92a3;font-weight:600;padding:4px 6px}
+.icon-btn.rs{color:#9a6b00;font-size:17px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:12.5px;margin:0 0 10px}
+.lg{padding:2px 9px;border-radius:999px;font-weight:600}
+.lg.chg{background:var(--edit);color:#7a5400;border:1px solid var(--edit-line)}.lg.add{background:#e3f4ea;color:#1e7b45}.lg.mov{background:#e6ecf6;color:#2c4a80}.lg.rem{background:#fde8e6;color:var(--bad)}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.std-card .field{border-top:0}
 /* print document */
 #printDoc{display:none}
 @media print{
@@ -218,7 +267,7 @@ dialog .actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
     <div id="exListView">
       <h2>Extracts</h2>
       <p class="lead">An extract is a frozen copy of the BOQ and Summary. Edit its quantities and rates freely, then print or save as PDF. Edits stay in the extract; the live system never sees them.</p>
-      <div class="toolbar"><button class="btn primary" data-act="extract">New extract from current BOQ</button></div>
+      <div class="toolbar"><button class="btn primary" data-act="extract">New extract</button></div>
       <div class="card ex-list" id="exList"></div>
     </div>
     <div id="exEditView" style="display:none"></div>
@@ -238,12 +287,21 @@ dialog .actions{display:flex;flex-direction:column;gap:8px;margin-top:12px}
     <button class="btn danger" data-act="reset">Reset inputs, rates &amp; assumptions to defaults</button>
     <button class="btn" data-act="close">Close</button>
   </div>
-  <p class="muted" style="font-size:12px;margin:14px 0 0;border-top:1px solid var(--line);padding-top:10px">Estimate Builder v1.1 &middot; &copy; Porpos Solutions. Licensed software: use is governed by the signed Software Licence Agreement. Copying or redistribution is not permitted.</p>
+  <p class="muted" id="storageInfo" style="font-size:12px;margin:12px 0 0"></p>
+  <p class="muted" style="font-size:12px;margin:10px 0 0;border-top:1px solid var(--line);padding-top:10px">Estimate Builder v1.3 &middot; &copy; Porpos Solutions. Licensed software: use is governed by the signed Software Licence Agreement. Copying or redistribution is not permitted.</p>
   <div>
   </div>
   <input type="file" id="importFile" accept=".json,application/json" hidden>
 </div></dialog>
 <div class="toast" id="toast"></div>
+<div id="popMenu" class="pop" hidden></div>
+<div id="dropLine" hidden></div>
+<dialog id="histDlg"><div class="dlg">
+  <h3>Snapshot history</h3>
+  <p class="muted" style="margin:0 0 10px;font-size:13.5px">Saved automatically when you open the extract and before every download or print. Up to 20 are kept.</p>
+  <div id="histList"></div>
+  <div class="actions"><button class="btn" data-act="histClose">Close</button></div>
+</div></dialog>
 
 <script src="lib/jspdf.umd.min.js"></script>
 <script src="lib/jspdf.plugin.autotable.min.js"></script>
@@ -300,7 +358,7 @@ let S = defaultSettings();
   const saved = store.get(KEY_SET);
   if (saved) for (const g of ['inputs','assumptions','rates']) if (saved[g]) for (const k in S[g]) if (k in saved[g]) S[g][k] = saved[g][k];
 })();
-let EX = store.get(KEY_EX) || [];
+let EX = [];
 let saveTimer = null;
 function saveSettings(){ clearTimeout(saveTimer); saveTimer = setTimeout(() => store.set(KEY_SET, S), 250); }
 function saveExtracts(){ store.set(KEY_EX, EX); }
@@ -318,7 +376,7 @@ const f2 = n => (Math.abs(n) < 0.005 ? '-' : nf2.format(n));
 const fq = n => Number.isInteger(r9(n)) ? nf0.format(r9(n)) : nf2.format(n);
 const naira = n => '₦' + nf0.format(Math.round(n));
 const pct = v => (num(v)*100).toLocaleString('en-NG',{maximumFractionDigits:2}) + '%';
-function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('on'), 2200); }
+function toast(msg, ms){ const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('on'), ms || 2400); }
 const picked = src => /^Picked/i.test(src || '');
 
 /* ===================================================== ENGINE (mirrors the closed workbook) */
@@ -620,57 +678,305 @@ function renderSummary(){
   $('#checksView').innerHTML = C.map(c => `<li><span class="pill ${c.ok?'pass':'fail'}">${c.ok?'PASS':'FAIL'}</span><div>${esc(c.label)}${!c.ok ? `<div class="fix">${esc(c.fix)}${c.detail ? ' — '+esc(c.detail) : ''}</div>` : ''}</div></li>`).join('');
 }
 
-/* ===================================================== EXTRACTS */
+/* ===================================================== EXTRACTS (v3: editable structure, change tracking, snapshots, standards) */
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 function today(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function makeExtract(){
+const EX_VER = 2, SNAP_MAX = 20, LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const clone = x => JSON.parse(JSON.stringify(x));
+const nowISO = () => new Date().toISOString();
+const when = iso => { try{ return new Date(iso).toLocaleString('en-NG',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ return iso || ''; } };
+const btypeLabel = b => (BTYPES[b] || {}).label || 'Unknown type';
+const newRow = () => ({desc:'', unit:'', qty:1, rate:0, qty0:1, rate0:0, added:true});
+const letterAt = i => LETTERS[i] || ('S' + (i + 1));
+
+/* position of every calculated line and section in the default BOQ order */
+const DEF_INDEX = {}, DEF_SEC_INDEX = {};
+BOQ_DEF.forEach((d, si) => { DEF_SEC_INDEX[d.k] = si; d.items.forEach((it, ii) => { DEF_INDEX[`${d.k}|${it[2]}|${it[3]}`] = si*1000 + ii; }); });
+const idSec = it => (it.id || '').split('|')[0];
+
+/* ---------- views & totals ---------- */
+const visSecs = ex => ex.sections.filter(s => !s.removed);
+function exView(ex){ return visSecs(ex).map((s,i) => ({k: letterAt(i), t: s.t, src: s, items: s.items.filter(it => !it.removed)})); }
+function exTotals(ex){ return totals(exView(ex), ex.fee, ex.cont); }
+const isAdj = it => !it.added && (num(it.qty) !== num(it.qty0) || num(it.rate) !== num(it.rate0));
+const descChanged = it => !it.added && (it.desc ?? '') !== (it.desc0 ?? it.desc);
+const unitChanged = it => !it.added && (it.unit ?? '') !== (it.unit0 ?? it.unit);
+const isRenamed = it => descChanged(it) || unitChanged(it);
+
+/* ---------- the extract's own default (as calculated when it was made) ---------- */
+function baselineSections(ex){
+  const secs = ex.sections.filter(s => !s.added).map(s => ({key: s.key, t: s.t0 ?? s.t, t0: s.t0 ?? s.t, items: []}));
+  secs.sort((a, b) => (DEF_SEC_INDEX[a.key] ?? 999) - (DEF_SEC_INDEX[b.key] ?? 999));
+  const byKey = {}; secs.forEach(s => byKey[s.key] = s);
+  const items = [];
+  ex.sections.forEach(s => s.items.forEach(it => { if (!it.added) items.push(it); }));
+  items.sort((a, b) => (DEF_INDEX[a.id] ?? 1e9) - (DEF_INDEX[b.id] ?? 1e9)).forEach(it => {
+    const n = clone(it); delete n.removed;
+    n.qty = n.qty0; n.rate = n.rate0; n.desc = n.desc0 ?? n.desc; n.unit = n.unit0 ?? n.unit;
+    (byKey[idSec(n)] || secs[0]).items.push(n);
+  });
+  return secs;
+}
+function defaultRefs(ex){
+  const refs = {}, secL = {};
+  baselineSections(ex).forEach((s, i) => { const L = letterAt(i); secL[s.key] = L; s.items.forEach((it, j) => { if (it.id) refs[it.id] = L + (j + 1); }); });
+  return {refs, secL};
+}
+
+/* ---------- which rows and sections have been moved (longest-increasing-subsequence test) ---------- */
+function lisKeep(vals){
+  const n = vals.length, tails = [], tailIdx = [], prev = new Array(n).fill(-1);
+  for (let i = 0; i < n; i++){
+    let lo = 0, hi = tails.length;
+    while (lo < hi){ const m = (lo + hi) >> 1; if (tails[m] < vals[i]) lo = m + 1; else hi = m; }
+    tails[lo] = vals[i]; tailIdx[lo] = i; prev[i] = lo > 0 ? tailIdx[lo - 1] : -1;
+  }
+  const keep = new Set(); let k = tailIdx[tails.length - 1];
+  while (k !== undefined && k >= 0){ keep.add(k); k = prev[k]; }
+  return keep;
+}
+function computeMoves(ex){
+  const movedItems = new Set(), movedSecs = new Set();
+  const os = ex.sections.filter(s => !s.added && !s.removed), keepS = lisKeep(os.map(s => DEF_SEC_INDEX[s.key] ?? 999));
+  os.forEach((s, i) => { if (!keepS.has(i)) movedSecs.add(s); });
+  ex.sections.forEach(s => {
+    if (s.removed) return;
+    const orig = s.items.filter(it => !it.added && !it.removed && it.id);
+    const home = orig.filter(it => idSec(it) === s.key);
+    orig.forEach(it => { if (idSec(it) !== s.key) movedItems.add(it); });
+    const keep = lisKeep(home.map(it => DEF_INDEX[it.id] ?? 1e9));
+    home.forEach((it, i) => { if (!keep.has(i)) movedItems.add(it); });
+  });
+  return {movedItems, movedSecs};
+}
+
+/* ---------- difference from the default (what makes an extract a "standard") ---------- */
+function diffOf(ex){
+  const d = {qty:0, rate:0, renamed:0, addedRows:0, removedRows:0, addedSecs:0, removedSecs:0, renamedSecs:0, moved:0};
+  const orig = [];
+  ex.sections.forEach(s => {
+    if (s.added){ if (!s.removed) d.addedSecs++; }
+    else { if (s.removed) d.removedSecs++; if (s.t !== s.t0) d.renamedSecs++; }
+    s.items.forEach(it => {
+      if (it.added){ if (!it.removed && !s.removed) d.addedRows++; return; }
+      orig.push({qty: it.qty0, rate: it.rate0});
+      if (it.removed){ d.removedRows++; return; }
+      if (num(it.qty) !== num(it.qty0)) d.qty++;
+      if (num(it.rate) !== num(it.rate0)) d.rate++;
+      if (isRenamed(it)) d.renamed++;
+    });
+  });
+  const mv = computeMoves(ex); d.moved = mv.movedItems.size + mv.movedSecs.size;
+  d.origGrand = totals([{k:'', t:'', items: orig}], ex.fee, ex.cont).grand; d.grand = exTotals(ex).grand;
+  d.total = d.qty + d.rate + d.renamed + d.addedRows + d.removedRows + d.addedSecs + d.removedSecs + d.renamedSecs + d.moved;
+  return d;
+}
+function diffText(d, short){
+  if (!d) return '';
+  const p = [], add = (n, one, many) => { if (n) p.push(n + ' ' + (n === 1 ? one : many)); };
+  add(d.qty, 'quantity changed', 'quantities changed'); add(d.rate, 'rate changed', 'rates changed');
+  add(d.renamed, 'row renamed', 'rows renamed'); add(d.addedRows, 'row added', 'rows added'); add(d.removedRows, 'row removed', 'rows removed');
+  add(d.moved, 'item moved', 'items moved'); add(d.addedSecs, 'section added', 'sections added'); add(d.removedSecs, 'section deleted', 'sections deleted');
+  add(d.renamedSecs, 'section renamed', 'sections renamed');
+  if (!p.length) return 'same as default';
+  const money = d.grand - d.origGrand;
+  const m = Math.abs(money) >= 1 ? ` (${money > 0 ? '+' : '−'}${naira(Math.abs(money))} vs default)` : '';
+  return (short ? p.slice(0,3).join(', ') + (p.length > 3 ? '…' : '') : p.join(', ')) + m;
+}
+
+/* ---------- applying a standard ---------- */
+function applyDelta(base, o, e, mode, isQty){
+  o = num(o); e = num(e);
+  if (e === o) return base;
+  let v;
+  if (mode === 'value') v = e;
+  else if (mode === 'pct' && o !== 0) v = base * e / o;
+  else v = base + (e - o);
+  if (v < 0) v = 0;
+  if (isQty) return Number.isInteger(r9(e)) ? ceil9(v) : Math.round(v*100)/100;
+  return Math.round(v);
+}
+function freshSections(){
   const L = buildLive();
-  const n = EX.length + 1;
+  return {L, sections: L.sections.map(s => ({key:s.key, t:s.t, t0:s.t, items: s.items.map(it => ({
+    id:`${s.key}|${it.key}|${it.code}`, desc:it.desc, desc0:it.desc, unit:it.unit, unit0:it.unit, qty0:it.qty, rate0:it.rate, qty:it.qty, rate:it.rate}))}))};
+}
+function applyStandard(base, std, o){
+  const fi = {}, fs = {};
+  base.forEach(s => { fs[s.key] = s; s.items.forEach(it => fi[it.id] = it); });
+  const stdIds = new Set(), stdSecs = new Set();
+  std.sections.forEach(s => { if (s.key && !s.added) stdSecs.add(s.key); s.items.forEach(it => { if (!it.added && it.id) stdIds.add(it.id); }); });
+  const out = [];
+  std.sections.forEach(ss => {
+    if (ss.key && !ss.added){
+      const f = fs[ss.key]; if (!f) return;
+      const sec = {key:ss.key, t0:f.t0, t: ss.t !== ss.t0 ? ss.t : f.t, items: []};
+      if (ss.removed) sec.removed = true;
+      ss.items.forEach(it => {
+        if (it.added){ const c = clone(it); c.qty0 = c.qty; c.rate0 = c.rate; sec.items.push(c); return; }
+        const b = it.id && fi[it.id]; if (!b) return;
+        const n = {...b};
+        if (descChanged(it)) n.desc = it.desc;
+        if (unitChanged(it)) n.unit = it.unit;
+        n.qty = applyDelta(b.qty0, it.qty0, it.qty, o.qtyMode, true);
+        n.rate = applyDelta(b.rate0, it.rate0, it.rate, o.rateMode, false);
+        if (it.removed) n.removed = true;
+        sec.items.push(n);
+      });
+      f.items.forEach(b => { if (!stdIds.has(b.id)) sec.items.push({...b}); });
+      out.push(sec);
+    } else if (ss.added){
+      const c = clone(ss); c.items.forEach(it => { it.qty0 = it.qty; it.rate0 = it.rate; }); out.push(c);
+    }
+  });
+  base.forEach(s => { if (!stdSecs.has(s.key)){ const at = out.findIndex(x => x.key && !x.added && DEF_SEC_INDEX[x.key] > DEF_SEC_INDEX[s.key]); at < 0 ? out.push(s) : out.splice(at, 0, s); } });
+  return out;
+}
+
+/* ---------- create / migrate / store ---------- */
+function uniqueName(base, exceptId){ let n = base, i = 2; while (EX.some(x => x.name === n && x.id !== exceptId)) n = `${base} (${i++})`; return n; }
+function defaultExName(){ const c = (S.inputs.client || '').trim(); return `${btypeLabel(S.inputs.btype)}${c ? ' — ' + c : ''} — ${today()}`; }
+function makeExtract(){
+  const {L, sections} = freshSections();
   const ex = {
-    id: uid(), name: `Extract ${n} — ${today()}`, created: new Date().toISOString(),
+    v: EX_VER, id: uid(), name: uniqueName(defaultExName()), created: nowISO(), updated: nowISO(),
+    btype: S.inputs.btype || 'one',
     project: S.inputs.proj || '', client: S.inputs.client || '', prepared: S.inputs.prep || '', date: today(),
-    fee: L.I.fee, cont: L.I.cont, note: '',
-    sections: L.sections.map(s => ({k:s.k, t:s.t, items: s.items.map(it => ({desc:it.desc, unit:it.unit, qty0:it.qty, rate0:it.rate, qty:it.qty, rate:it.rate}))}))
+    fee: L.I.fee, cont: L.I.cont, note: '', basedOn: null, sections, snapshots: []
   };
-  EX.unshift(ex); saveExtracts();
+  ex.diff = diffOf(ex);
+  EX.unshift(ex); saveExtracts(true);
   return ex;
 }
-const isAdj = it => !it.added && (num(it.qty) !== it.qty0 || num(it.rate) !== it.rate0);
-function exTotals(ex){ return totals(ex.sections, ex.fee, ex.cont); }
-function exChanges(ex){ let a = 0, n = 0, r = 0; ex.sections.forEach(s => s.items.forEach(it => { if (it.removed) r++; else if (it.added) n++; else if (isAdj(it)) a++; })); return {a, n, r, all: a+n+r}; }
-function exChangeText(c){ const p = []; if (c.a) p.push(c.a+' adjusted'); if (c.n) p.push(c.n+' added'); if (c.r) p.push(c.r+' removed'); return p.length ? p.join(', ') : 'no manual changes'; }
+function migrateEx(ex){
+  if (!ex || typeof ex !== 'object' || !Array.isArray(ex.sections)) return null;
+  if ((ex.v || 0) >= EX_VER){ ex.snapshots = ex.snapshots || []; return ex; }
+  const byTitle = {}; BOQ_DEF.forEach(d => byTitle[d.t] = d);
+  ex.sections.forEach(s => {
+    const d = byTitle[s.t]; s.t0 = s.t; delete s.k;
+    if (d){
+      s.key = d.k;
+      const pool = d.items.map(([desc, unit, key, code]) => ({desc, unit, id:`${d.k}|${key}|${code}`, used:false}));
+      s.items.forEach(it => {
+        delete it.ref;
+        if (it.added) return;
+        const m = pool.find(p => !p.used && p.desc === it.desc && p.unit === it.unit);
+        if (m){ m.used = true; it.id = m.id; } else it.added = true;
+        it.desc0 = it.desc; it.unit0 = it.unit;
+      });
+    } else { s.added = true; s.items.forEach(it => { it.added = true; delete it.ref; }); }
+  });
+  const keys = new Set(ex.sections.map(s => s.key));
+  ex.btype = ex.btype || (keys.has('E2') ? 'two' : keys.has('D') ? 'one' : 'bungalow');
+  ex.updated = ex.updated || ex.created; ex.snapshots = ex.snapshots || []; ex.v = EX_VER;
+  ex.diff = diffOf(ex);
+  return ex;
+}
+function loadExtracts(){
+  let v = store.get(KEY_EX), fromBak = false;
+  if (!Array.isArray(v)){ const b = store.get(KEY_EX + '.bak'); if (Array.isArray(b)){ v = b; fromBak = true; } }
+  v = (Array.isArray(v) ? v : []).map(x => { try{ return migrateEx(x); }catch(e){ return null; } }).filter(Boolean);
+  try{ localStorage.setItem(KEY_EX + '.bak', JSON.stringify(v)); }catch(e){}
+  if (fromBak) setTimeout(() => toast('Extracts were restored from the automatic backup', 5000), 600);
+  return v;
+}
+let exTimer = null, exDirty = false;
+function flushExtracts(){
+  clearTimeout(exTimer); if (!exDirty) return true; exDirty = false;
+  if (CUR){ CUR.updated = nowISO(); try{ CUR.diff = diffOf(CUR); }catch(e){} }
+  const ok = store.set(KEY_EX, EX);
+  if (!ok) toast('Could not save: this device’s storage is full. Export a backup, then delete old extracts or snapshots.', 7000);
+  return ok;
+}
+function saveExtracts(now){ exDirty = true; clearTimeout(exTimer); if (now) return flushExtracts(); exTimer = setTimeout(flushExtracts, 400); return true; }
+window.addEventListener('pagehide', flushExtracts);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushExtracts(); });
+
+/* ---------- snapshots ---------- */
+function exCore(ex){ const c = clone(ex); delete c.snapshots; return c; }
+function snapshot(ex, label){
+  const js = JSON.stringify(exCore(ex));
+  ex.snapshots = ex.snapshots || [];
+  if (ex.snapshots[0] && ex.snapshots[0].js === js) return false;
+  ex.snapshots.unshift({at: nowISO(), label, js});
+  if (ex.snapshots.length > SNAP_MAX) ex.snapshots.length = SNAP_MAX;
+  saveExtracts(true);
+  return true;
+}
+function restoreSnapshot(ex, snap){
+  snapshot(ex, 'Before restoring an older snapshot');
+  const data = JSON.parse(snap.js), keep = {id: ex.id, snapshots: ex.snapshots, name: ex.name};
+  Object.keys(ex).forEach(k => delete ex[k]);
+  Object.assign(ex, migrateEx(data), keep);
+  saveExtracts(true);
+}
+
+/* ---------- list ---------- */
 function renderExList(){
   if (!EX.length){ $('#exList').innerHTML = '<div class="empty">No extracts yet. Make one from the BOQ when you are ready to print or adjust.</div>'; return; }
   $('#exList').innerHTML = EX.map(ex => { const t = exTotals(ex);
-    return `<div class="item"><div class="meta"><b>${esc(ex.name)}</b><span class="muted" style="font-size:13px">${esc(ex.client)} · ${naira(t.grand)} · ${exChangeText(exChanges(ex))}</span></div>
+    return `<div class="item"><div class="meta"><b>${esc(ex.name)}</b>
+      <span class="muted" style="font-size:13px">${esc(btypeLabel(ex.btype))} · ${esc(ex.client)} · ${naira(t.grand)} · updated ${esc(when(ex.updated))}</span>
+      <span class="std-line">${ex.basedOn ? `Based on “${esc(ex.basedOn.name)}” · ` : ''}Difference from default: ${esc(diffText(ex.diff, true))}${ex.snapshots && ex.snapshots.length ? ` · ${ex.snapshots.length} snapshot${ex.snapshots.length>1?'s':''}` : ''}</span></div>
       <button class="btn primary" data-act="openEx" data-id="${ex.id}">Open</button>
+      <button class="btn" data-act="renameEx" data-id="${ex.id}">Rename</button>
       <button class="btn" data-act="dupEx" data-id="${ex.id}">Duplicate</button>
       <button class="btn danger" data-act="delEx" data-id="${ex.id}">Delete</button></div>`; }).join('');
 }
+
+/* ---------- editor ---------- */
 let CUR = null;
 const PO_KEY = 'estimateBuilder.printOpts';
 const printOpts = Object.assign({hideZero:true, marks:false, orient:'portrait', content:'together', colour:'colour'}, store.get(PO_KEY) || {});
 function savePO(){ store.set(PO_KEY, printOpts); }
 function openExtract(id){
   CUR = EX.find(e => e.id === id); if (!CUR) return;
+  snapshot(CUR, 'Opened');
   $('#exListView').style.display = 'none'; $('#exEditView').style.display = 'block';
   renderExEditor(); window.scrollTo(0,0);
 }
-function closeExtract(){ CUR = null; $('#exEditView').style.display = 'none'; $('#exListView').style.display = 'block'; renderExList(); }
+function closeExtract(){ flushExtracts(); CUR = null; closePop(); $('#exEditView').style.display = 'none'; $('#exListView').style.display = 'block'; renderExList(); }
 function outButtons(){
   const sep = printOpts.content === 'separate';
   return `<button class="btn primary" data-act="pdf">${sep ? 'Download PDFs (BOQ + Summary)' : 'Download PDF'}</button>
     ${sep ? '<button class="btn" data-act="print" data-part="boq">Print BOQ</button><button class="btn" data-act="print" data-part="summary">Print Summary</button>' : '<button class="btn" data-act="print">Print</button>'}
     <button class="btn" data-act="csv">Download CSV</button>`;
 }
+function stdOptions(ex){
+  const stds = EX.filter(x => x.id !== ex.id && x.btype === ex.btype);
+  const cur = ex.basedOn ? ex.basedOn.id : '';
+  return `<option value="">Default — exactly as calculated from the inputs</option>` +
+    stds.map(x => `<option value="${x.id}" ${x.id === cur ? 'selected' : ''}>${esc(x.name)} — ${esc(diffText(x.diff, true))}</option>`).join('');
+}
 function renderExEditor(){
   const ex = CUR;
   const sel = (opt, choices) => `<select data-opt="${opt}">${choices.map(([v,l]) => `<option value="${v}" ${printOpts[opt]===v?'selected':''}>${l}</option>`).join('')}</select>`;
-  $('#exEditView').innerHTML = `<div class="toolbar"><button class="btn" data-act="backEx">&larr; All extracts</button><span id="outBtns" style="display:contents">${outButtons()}</span>
-      <button class="btn danger" data-act="resetEx">Undo all changes</button></div>
-    <div class="notice">This is an isolated copy. Changing, adding or removing rows here does not touch your Inputs, Rates or the live BOQ. Adjusted rows are yellow, added rows are green.</div>
+  const n = (ex.snapshots || []).length, bo = ex.basedOn || {};
+  const others = EX.filter(x => x.id !== ex.id && x.btype === ex.btype).length;
+  $('#exEditView').innerHTML = `<div class="toolbar"><button class="btn" data-act="backEx">&larr; All extracts</button>
+      <button class="btn" data-act="snapNow">Save snapshot</button><button class="btn" data-act="history">History (<span id="snapCount">${n}</span>)</button>
+      <span id="outBtns" style="display:contents">${outButtons()}</span>
+      <button class="btn" data-act="bulkMenu">Restore &#9662;</button></div>
+    <div class="card"><div class="field"><label>Extract name</label><div class="row"><input class="ex-name" data-ex="name" type="text" value="${esc(ex.name)}"></div>
+      <span class="src">${esc(btypeLabel(ex.btype))} · created ${esc(when(ex.created))} · saved automatically</span>
+      <span class="std-line" id="exDiff"></span></div></div>
+    <div class="card std-card"><h3>Standard of measurement</h3>
+      <div class="field"><label for="stdSel">Start this extract from</label><div class="row"><select id="stdSel" class="bsel">${stdOptions(ex)}</select></div>
+        <span class="src">${others ? `Lists the other ${others} saved extract${others>1?'s':''} of the same building type (${esc(btypeLabel(ex.btype))}). Picking one repeats its changes on this extract’s own default.` : `No other ${esc(btypeLabel(ex.btype))} extracts yet. Every extract you save appears here for future extracts.`}</span></div>
+      <div class="grid-2" id="stdModes">
+        <div class="field"><label for="stdQty">Its quantity changes</label><div class="row"><select id="stdQty" class="bsel">
+          <option value="pct" ${bo.qtyMode!=='amt'&&bo.qtyMode!=='value'?'selected':''}>Same percentage (scales with size)</option><option value="amt" ${bo.qtyMode==='amt'?'selected':''}>Same amount</option><option value="value" ${bo.qtyMode==='value'?'selected':''}>Exact same quantity</option></select></div></div>
+        <div class="field"><label for="stdRate">Its rate changes</label><div class="row"><select id="stdRate" class="bsel">
+          <option value="amt" ${bo.rateMode!=='pct'&&bo.rateMode!=='value'?'selected':''}>Same ₦ difference</option><option value="pct" ${bo.rateMode==='pct'?'selected':''}>Same percentage</option><option value="value" ${bo.rateMode==='value'?'selected':''}>Exact same rate</option></select></div></div>
+      </div>
+      <div class="field"><div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn primary" data-act="applyStd">Apply</button><span class="muted" id="stdInfo" style="font-size:13px;flex:1"></span></div></div>
+    </div>
+    <div class="legend"><span class="lg chg">changed</span><span class="lg add">added</span><span class="lg mov">moved</span><span class="lg rem">removed</span>
+      <span class="muted">Each change shows the default value under it. Use &#8634; to restore one item, or <b>Restore &#9662;</b> for bulk.</span></div>
+    <div class="card"><div class="scroll"><table class="ex-table"><thead><tr><th>Ref</th><th>Description</th><th>Unit</th><th class="num w-qty">Qty</th><th class="num w-rate">Rate (₦)</th><th class="num">Amount (₦)</th><th></th></tr></thead><tbody id="exBody"></tbody></table></div></div>
+    <div class="card"><h3>Summary</h3><div id="exSummary"></div></div>
     <div class="card"><h3>Document details</h3><div class="ex-head">
-      ${[['name','Extract name'],['project','Project'],['client','Client'],['prepared','Prepared by'],['date','Date']].map(([k,l]) => `<div class="field"><label>${l}</label><div class="row"><input data-ex="${k}" type="text" value="${esc(ex[k])}"></div></div>`).join('')}
+      ${[['project','Project'],['client','Client'],['prepared','Prepared by'],['date','Date']].map(([k,l]) => `<div class="field"><label>${l}</label><div class="row"><input data-ex="${k}" type="text" value="${esc(ex[k])}"></div></div>`).join('')}
       <div class="field"><label>Fee %</label><div class="row"><input data-ex="fee" type="number" inputmode="decimal" step="any" value="${r9(ex.fee*100)}"><span class="unit">%</span></div></div>
       <div class="field"><label>Contingency %</label><div class="row"><input data-ex="cont" type="number" inputmode="decimal" step="any" value="${r9(ex.cont*100)}"><span class="unit">%</span></div></div>
     </div>
@@ -681,68 +987,259 @@ function renderExEditor(){
       <label>Colour ${sel('colour', [['colour','Colour'],['bw','Black & white']])}</label>
       <label><input type="checkbox" data-opt="hideZero" ${printOpts.hideZero?'checked':''}> Hide lines and sections worth ₦0</label>
       <label><input type="checkbox" data-opt="marks" ${printOpts.marks?'checked':''}> Mark adjusted / added lines with *</label>
-    </div><div class="field muted" style="font-size:13px">Sections are never split across pages: if a section does not fit on the rest of a page, it starts on a new page. Only a section longer than a whole page continues over pages.</div></div>
-    <div class="card"><div class="scroll"><table class="ex-table"><thead><tr><th>Ref</th><th>Description</th><th>Unit</th><th class="num w-qty">Qty</th><th class="num w-rate">Rate (₦)</th><th class="num">Amount (₦)</th><th></th></tr></thead><tbody id="exBody"></tbody></table></div></div>
-    <div class="card"><h3>Summary</h3><div id="exSummary"></div></div>`;
-  renderExBody(); renderExSummary();
+    </div><div class="field muted" style="font-size:13px">Sections are never split across pages: if a section does not fit on the rest of a page, it starts on a new page.</div></div>`;
+  updateStdInfo(); renderExBody(); renderExSummary();
 }
+function updateStdInfo(){
+  if (!CUR) return;
+  const id = $('#stdSel').value, std = EX.find(x => x.id === id), bo = CUR.basedOn;
+  $('#stdModes').style.display = std ? '' : 'none';
+  const nowTxt = bo ? `Currently based on “${bo.name}”.` : 'Currently the default.';
+  $('#stdInfo').textContent = std
+    ? `${nowTxt} “${std.name}” differs from its default by: ${diffText(std.diff)}. Apply repeats those changes on this extract.`
+    : `${nowTxt} Apply resets this extract to exactly the calculated default.`;
+}
+const note = (cls, txt, attrs = '') => `<span class="was ${cls}" ${attrs}>${txt}</span>`;
 function renderExBody(){
-  const ex = CUR, t = exTotals(ex); let h = '';
-  ex.sections.forEach((s,si) => {
-    const st = t.secTot[si];
-    h += `<tr class="sec"><td>${s.k}</td><td colspan="6">${esc(s.t)}</td></tr>`;
-    let n = 0, removed = 0;
-    s.items.forEach((it,ii) => {
-      if (it.removed){ removed++; return; }
-      const ref = s.k + (++n);
-      const adj = isAdj(it), qc = !it.added && num(it.qty) !== it.qty0, rc = !it.added && num(it.rate) !== it.rate0;
+  const ex = CUR, view = exView(ex), t = totals(view, ex.fee, ex.cont), {refs, secL} = defaultRefs(ex), {movedItems, movedSecs} = computeMoves(ex);
+  let h = '', vi = 0;
+  ex.sections.forEach((s, si) => {
+    if (s.removed){
+      h += `<tr class="sec gone" data-si="${si}"><td class="sl">&ndash;</td><td colspan="5"><span class="gone-t">${esc(s.t)}</span>${note('rem', s.added ? 'Added section, removed' : `Section ${secL[s.key] || ''} removed`)}</td>
+        <td class="x"><button class="btn small" data-act="restoreSec" data-si="${si}">&#8634; Restore</button></td></tr>`;
+      return;
+    }
+    const L = view[vi].k, st = t.secTot[vi]; vi++;
+    const renamedSec = !s.added && s.t !== s.t0, mvS = movedSecs.has(s);
+    const sNotes = [s.added ? note('add', 'Added section') : '', s.added ? '' : note('chg', renamedSec ? `was “${esc(s.t0)}”` : '', `data-was="t-${si}"`), mvS ? note('mov', `Moved — was section ${secL[s.key]}`) : ''].join('');
+    const sCan = s.added || renamedSec || mvS;
+    h += `<tr class="sec ${s.added?'is-add':''}" data-si="${si}"><td class="sl">${L}</td><td colspan="5"><input class="sec-title ${s.added?'added':''} ${renamedSec?'renamed':''} ${mvS?'moved':''}" data-sf="t" data-si="${si}" value="${esc(s.t)}" placeholder="Section title" aria-label="Section title">${sNotes}</td>
+      <td class="x">${sCan ? `<button class="icon-btn rs" title="${s.added ? 'Remove this added section' : 'Restore title and position'}" data-act="restoreSecHead" data-si="${si}">&#8634;</button>` : ''}<button class="icon-btn" title="Section options" data-act="secMenu" data-si="${si}">&#8943;</button></td></tr>`;
+    let n = 0;
+    s.items.forEach((it, ii) => {
+      if (it.removed){
+        h += `<tr class="line gone" data-si="${si}" data-ii="${ii}"><td class="muted hide-sm rf">&ndash;</td><td class="d" colspan="5"><div class="dwrap"><span class="gone-t">${esc(it.desc)}</span>${note('rem', it.added ? 'Added row, removed' : `Removed — was ${refs[it.id] || ''}: ${fq(num(it.qty0))} ${esc(it.unit0 ?? it.unit)} × ${f0(num(it.rate0))}`)}</div></td>
+          <td class="x"><button class="btn small" data-act="restoreRow" data-si="${si}" data-ii="${ii}">&#8634; Restore</button></td></tr>`;
+        return;
+      }
+      const ref = L + (++n);
+      const qc = !it.added && num(it.qty) !== num(it.qty0), rc = !it.added && num(it.rate) !== num(it.rate0);
+      const dc = descChanged(it), uc = unitChanged(it), mv = movedItems.has(it);
+      const can = it.added || qc || rc || dc || uc || mv;
       const cls = it.added ? 'added' : '';
-      const descCell = it.added
-        ? `<input class="cell-in txt added" type="text" placeholder="Description" data-si="${si}" data-ii="${ii}" data-f="desc" value="${esc(it.desc)}">`
-        : esc(it.desc);
-      const unitCell = it.added
-        ? `<input class="cell-in txt added" type="text" placeholder="Unit" data-si="${si}" data-ii="${ii}" data-f="unit" value="${esc(it.unit)}" style="width:80px">`
-        : esc(it.unit);
-      h += `<tr class="line ${cls}"><td class="muted hide-sm">${ref}</td><td class="d"><span class="ref">${ref}</span>${descCell}</td><td class="u muted">${unitCell}</td>
-        <td class="q w-qty"><input class="cell-in ${qc?'changed':''} ${cls}" type="number" inputmode="decimal" step="any" data-si="${si}" data-ii="${ii}" data-f="qty" value="${esc(it.qty)}"><span class="was" data-was="qty-${si}-${ii}">${qc?'was '+fq(it.qty0):''}</span></td>
-        <td class="r w-rate"><input class="cell-in ${rc?'changed':''} ${cls}" type="number" inputmode="decimal" step="any" data-si="${si}" data-ii="${ii}" data-f="rate" value="${esc(it.rate)}"><span class="was" data-was="rate-${si}-${ii}">${rc?'was '+f0(it.rate0):''}</span></td>
+      h += `<tr class="line ${cls} ${mv?'is-mov':''}" data-si="${si}" data-ii="${ii}">
+        <td class="muted hide-sm rf">${ref}</td>
+        <td class="d"><div class="dwrap"><span class="drag" data-drag title="Drag to move">&#10303;</span><span class="ref">${ref}</span><input class="cell-in txt ${cls} ${dc?'renamed':''}" type="text" placeholder="Description" data-si="${si}" data-ii="${ii}" data-f="desc" value="${esc(it.desc)}">
+          ${it.added ? note('add', 'Added row') : note('chg', dc ? `was “${esc(it.desc0)}”` : '', `data-was="desc-${si}-${ii}"`)}${mv ? note('mov', `Moved — was ${refs[it.id] || ''}`) : ''}</div></td>
+        <td class="u"><input class="cell-in txt ${cls} ${uc?'renamed':''}" type="text" placeholder="Unit" data-si="${si}" data-ii="${ii}" data-f="unit" value="${esc(it.unit)}">${it.added ? '' : note('chg', uc ? `was ${esc(it.unit0)}` : '', `data-was="unit-${si}-${ii}"`)}</td>
+        <td class="q w-qty"><input class="cell-in ${qc?'changed':''} ${cls}" type="number" inputmode="decimal" step="any" data-si="${si}" data-ii="${ii}" data-f="qty" value="${esc(it.qty)}">${note('chg', qc ? 'was ' + fq(num(it.qty0)) : '', `data-was="qty-${si}-${ii}"`)}</td>
+        <td class="r w-rate"><input class="cell-in ${rc?'changed':''} ${cls}" type="number" inputmode="decimal" step="any" data-si="${si}" data-ii="${ii}" data-f="rate" value="${esc(it.rate)}">${note('chg', rc ? 'was ' + f0(num(it.rate0)) : '', `data-was="rate-${si}-${ii}"`)}</td>
         <td class="a num" data-amt="${si}-${ii}">${f0(num(it.qty)*num(it.rate))}</td>
-        <td class="x"><button class="icon-btn" title="Undo changes to this row" data-act="resetLine" data-si="${si}" data-ii="${ii}" data-undo="${si}-${ii}" style="${adj?'':'visibility:hidden'}">&#8634;</button><button class="icon-btn del" title="Remove this row" data-act="removeLine" data-si="${si}" data-ii="${ii}">&#10005;</button></td></tr>`;
+        <td class="x"><button class="icon-btn rs" title="${it.added ? 'Remove this added row' : 'Restore this row to default'}" data-act="restoreRow" data-si="${si}" data-ii="${ii}" data-undo="${si}-${ii}" style="${can?'':'visibility:hidden'}">&#8634;</button><button class="icon-btn" title="Row options" data-act="rowMenu" data-si="${si}" data-ii="${ii}">&#8943;</button></td></tr>`;
     });
-    h += `<tr class="addrow"><td class="hide-sm"></td><td colspan="6"><button class="btn small" data-act="addLine" data-si="${si}">+ Add row to ${s.k}</button>
-      ${removed ? `<span class="muted" style="font-size:13px;margin-left:10px">${removed} row${removed>1?'s':''} removed &middot; <a href="#" data-act="restoreSec" data-si="${si}">restore</a></span>` : ''}</td></tr>`;
-    h += `<tr class="sub"><td class="hide-sm"></td><td colspan="4">Subtotal ${s.k}</td><td class="num" data-sub="${si}">${f0(st.sub)}</td><td class="hide-sm"></td></tr>
+    h += `<tr class="addrow" data-si="${si}"><td class="hide-sm"></td><td colspan="6"><button class="btn small" data-act="addRowEnd" data-si="${si}">+ Add row to ${L}</button></td></tr>`;
+    h += `<tr class="sub"><td class="hide-sm"></td><td colspan="4">Subtotal ${L}</td><td class="num" data-sub="${si}">${f0(st.sub)}</td><td class="hide-sm"></td></tr>
           <tr class="sub"><td class="hide-sm"></td><td colspan="4" data-feelbl>Fees (${pct(ex.fee)})</td><td class="num" data-fee="${si}">${f0(st.fee)}</td><td class="hide-sm"></td></tr>
-          <tr class="tot"><td class="hide-sm"></td><td colspan="4">Section total ${s.k}</td><td class="num" data-tot="${si}">${f0(st.total)}</td><td class="hide-sm"></td></tr>`;
+          <tr class="tot"><td class="hide-sm"></td><td colspan="4">Section total ${L}</td><td class="num" data-tot="${si}">${f0(st.total)}</td><td class="hide-sm"></td></tr>`;
   });
+  h += `<tr class="addsec"><td class="hide-sm"></td><td colspan="6"><button class="btn small" data-act="addSecEnd">+ Add section</button></td></tr>`;
   $('#exBody').innerHTML = h;
+  updateDiffLine();
 }
+function updateDiffLine(){ const el = $('#exDiff'); if (el && CUR){ CUR.diff = diffOf(CUR); el.textContent = 'Difference from default: ' + diffText(CUR.diff); } }
 function updateExNumbers(){
-  const ex = CUR, t = exTotals(ex);
-  ex.sections.forEach((s,si) => {
-    s.items.forEach((it,ii) => { const c = document.querySelector(`[data-amt="${si}-${ii}"]`); if (c) c.textContent = f0(num(it.qty)*num(it.rate)); });
-    const st = t.secTot[si];
-    const set = (a,v) => { const c = document.querySelector(`[${a}="${si}"]`); if (c) c.textContent = f0(v); };
+  const ex = CUR, view = exView(ex), t = totals(view, ex.fee, ex.cont);
+  view.forEach((v, vi) => {
+    const si = ex.sections.indexOf(v.src), st = t.secTot[vi];
+    ex.sections[si].items.forEach((it, ii) => { const c = document.querySelector(`[data-amt="${si}-${ii}"]`); if (c) c.textContent = f0(num(it.qty)*num(it.rate)); });
+    const set = (a, val) => { const c = document.querySelector(`[${a}="${si}"]`); if (c) c.textContent = f0(val); };
     set('data-sub', st.sub); set('data-fee', st.fee); set('data-tot', st.total);
   });
-  renderExSummary();
+  renderExSummary(); updateDiffLine();
 }
 function renderExSummary(){
   const ex = CUR, t = exTotals(ex);
   $('#exSummary').innerHTML = summaryTable(t.secTot, t.sum, t.sumSub, t.sumFee, t.contAmt, t.grand, ex.cont);
 }
+function rerenderEx(){ saveExtracts(); renderExBody(); renderExSummary(); }
+
+/* ---------- structural operations ---------- */
+function focusField(si, ii, f){ setTimeout(() => { const el = ii === null ? document.querySelector(`input[data-sf="t"][data-si="${si}"]`) : document.querySelector(`input[data-si="${si}"][data-ii="${ii}"][data-f="${f}"]`); if (el){ el.scrollIntoView({block:'center'}); el.focus(); el.select && el.select(); } }, 40); }
+function insertRow(si, ii){ CUR.sections[si].items.splice(ii, 0, newRow()); rerenderEx(); focusField(si, ii, 'desc'); }
+function moveItem(fs, fi, ts, ti){
+  const item = CUR.sections[fs].items.splice(fi, 1)[0];
+  if (fs === ts && ti > fi) ti--;
+  CUR.sections[ts].items.splice(Math.max(0, Math.min(ti, CUR.sections[ts].items.length)), 0, item);
+}
+function stepRow(si, ii, dir){
+  const items = CUR.sections[si].items;
+  let j = ii + dir; while (j >= 0 && j < items.length && items[j].removed) j += dir;
+  if (j >= 0 && j < items.length){ moveItem(si, ii, si, dir > 0 ? j + 1 : j); return; }
+  let sj = si + dir; while (sj >= 0 && sj < CUR.sections.length && CUR.sections[sj].removed) sj += dir;
+  if (sj < 0 || sj >= CUR.sections.length){ toast(dir < 0 ? 'Already the first row' : 'Already the last row'); return; }
+  moveItem(si, ii, sj, dir < 0 ? CUR.sections[sj].items.length : 0);
+}
+function insertSection(at){ CUR.sections.splice(at, 0, {added:true, t:'NEW SECTION', t0:'NEW SECTION', items:[newRow()]}); rerenderEx(); focusField(at, null); }
+function stepSection(si, dir){
+  let sj = si + dir; while (sj >= 0 && sj < CUR.sections.length && CUR.sections[sj].removed) sj += dir;
+  if (sj < 0 || sj >= CUR.sections.length){ toast(dir < 0 ? 'Already the first section' : 'Already the last section'); return; }
+  const [s] = CUR.sections.splice(si, 1); CUR.sections.splice(sj, 0, s);
+}
+/* put one original row back where the default had it */
+function restoreItemPosition(it){
+  const k = idSec(it); let sec = CUR.sections.find(s => s.key === k && !s.added);
+  if (!sec) return;
+  delete sec.removed;
+  CUR.sections.forEach(s => { const i = s.items.indexOf(it); if (i >= 0) s.items.splice(i, 1); });
+  const me = DEF_INDEX[it.id] ?? 1e9;
+  let at = sec.items.findIndex(x => !x.added && x.id && idSec(x) === k && (DEF_INDEX[x.id] ?? 1e9) > me);
+  if (at < 0) at = sec.items.length;
+  sec.items.splice(at, 0, it);
+}
+function restoreSectionPosition(s){
+  const i = CUR.sections.indexOf(s); CUR.sections.splice(i, 1);
+  const me = DEF_SEC_INDEX[s.key] ?? 999;
+  let at = CUR.sections.findIndex(x => !x.added && (DEF_SEC_INDEX[x.key] ?? 999) > me);
+  if (at < 0) at = CUR.sections.length;
+  CUR.sections.splice(at, 0, s);
+}
+function resetValues(it){ it.qty = it.qty0; it.rate = it.rate0; it.desc = it.desc0 ?? it.desc; it.unit = it.unit0 ?? it.unit; delete it.removed; }
+function restoreRow(si, ii){
+  const s = CUR.sections[si], it = s.items[ii];
+  if (it.added){ if (it.removed) delete it.removed; else s.items.splice(ii, 1); return; }
+  const wasMoved = computeMoves(CUR).movedItems.has(it);
+  resetValues(it);
+  if (wasMoved) restoreItemPosition(it);
+}
+function restoreSecHead(si){
+  const s = CUR.sections[si];
+  if (s.added){ if (confirm(`Remove the added section “${s.t}” and its rows?`)) CUR.sections.splice(si, 1); return; }
+  s.t = s.t0;
+  if (computeMoves(CUR).movedSecs.has(s)) restoreSectionPosition(s);
+}
+function restoreSectionAll(si){
+  const s = CUR.sections[si];
+  if (s.added){ restoreSecHead(si); return; }
+  s.t = s.t0; delete s.removed;
+  CUR.sections.forEach(o => o.items.slice().forEach(it => { if (!it.added && idSec(it) === s.key){ resetValues(it); restoreItemPosition(it); } }));
+  s.items = s.items.filter(it => !it.added);
+  s.items.sort((a, b) => (DEF_INDEX[a.id] ?? 1e9) - (DEF_INDEX[b.id] ?? 1e9));
+  if (computeMoves(CUR).movedSecs.has(s)) restoreSectionPosition(s);
+}
+function bulkRestore(kind){
+  snapshot(CUR, 'Before bulk restore');
+  const all = []; CUR.sections.forEach(s => s.items.forEach(it => all.push({s, it})));
+  if (kind === 'all'){ CUR.sections = baselineSections(CUR); }
+  else if (kind === 'qty') all.forEach(({it}) => { if (!it.added) it.qty = it.qty0; });
+  else if (kind === 'rate') all.forEach(({it}) => { if (!it.added) it.rate = it.rate0; });
+  else if (kind === 'names'){ all.forEach(({it}) => { if (!it.added){ it.desc = it.desc0 ?? it.desc; it.unit = it.unit0 ?? it.unit; } }); CUR.sections.forEach(s => { if (!s.added) s.t = s.t0; }); }
+  else if (kind === 'removed'){ CUR.sections.forEach(s => { delete s.removed; s.items.forEach(it => delete it.removed); }); }
+  else if (kind === 'added'){ CUR.sections = CUR.sections.filter(s => !s.added); CUR.sections.forEach(s => { s.items = s.items.filter(it => !it.added); }); }
+  else if (kind === 'order'){
+    const anchors = new Map(), secAnchors = [];
+    CUR.sections.forEach((s, i) => {
+      if (s.added){ let p = i - 1; while (p >= 0 && CUR.sections[p].added) p--; secAnchors.push({s, after: p >= 0 ? CUR.sections[p] : null}); return; }
+      let last = null; s.items.forEach(it => { if (it.added) anchors.set(it, {sec: s, after: last}); else last = it; });
+    });
+    const orig = CUR.sections.filter(s => !s.added);
+    orig.sort((a, b) => (DEF_SEC_INDEX[a.key] ?? 999) - (DEF_SEC_INDEX[b.key] ?? 999));
+    const byKey = {}; orig.forEach(s => { byKey[s.key] = s; });
+    const items = []; orig.forEach(s => s.items.forEach(it => { if (!it.added) items.push(it); }));
+    orig.forEach(s => { s.items = []; });
+    items.sort((a, b) => (DEF_INDEX[a.id] ?? 1e9) - (DEF_INDEX[b.id] ?? 1e9)).forEach(it => (byKey[idSec(it)] || orig[0]).items.push(it));
+    anchors.forEach((a, it) => { const s = a.sec; const at = a.after ? s.items.indexOf(a.after) + 1 : 0; s.items.splice(at, 0, it); });
+    const out = orig.slice();
+    secAnchors.forEach(({s, after}) => { const at = after ? out.indexOf(after) + 1 : 0; out.splice(at, 0, s); });
+    CUR.sections = out;
+  }
+  rerenderEx(); toast('Restored (a snapshot was saved first)');
+}
+function applyStdToCurrent(){
+  const id = $('#stdSel').value, std = EX.find(x => x.id === id);
+  const o = {qtyMode: $('#stdQty').value, rateMode: $('#stdRate').value};
+  const d = diffOf(CUR);
+  if (d.total && !confirm(`This replaces the changes in “${CUR.name}” (${diffText(d, true)}) with ${std ? `the changes from “${std.name}”` : 'the plain default'}. A snapshot is saved first. Continue?`)){ $('#stdSel').value = CUR.basedOn ? CUR.basedOn.id : ''; updateStdInfo(); return; }
+  snapshot(CUR, std ? `Before applying standard “${std.name}”` : 'Before resetting to default');
+  const base = baselineSections(CUR);
+  CUR.sections = std ? applyStandard(base, std, o) : base;
+  CUR.basedOn = std ? {id: std.id, name: std.name, qtyMode: o.qtyMode, rateMode: o.rateMode} : null;
+  rerenderEx(); updateStdInfo();
+  toast(std ? `Applied “${std.name}”` : 'Reset to default');
+}
+
+/* ---------- pop-up menus ---------- */
+function closePop(){ const p = $('#popMenu'); if (p) p.hidden = true; }
+function openPop(btn, items){
+  const p = $('#popMenu');
+  p.innerHTML = items.map(x => x === '-' ? '<hr>' : `<button data-act="${x[0]}" ${Object.entries(x[2]||{}).map(([k,v]) => `data-${k}="${v}"`).join(' ')} class="${x[3]||''}">${x[1]}</button>`).join('');
+  p.hidden = false;
+  const r = btn.getBoundingClientRect(), w = p.offsetWidth, hgt = p.offsetHeight;
+  let left = Math.min(window.innerWidth - w - 8, Math.max(8, r.right - w)), top = r.bottom + 4;
+  if (top + hgt > window.innerHeight - 8) top = Math.max(8, r.top - hgt - 4);
+  p.style.left = left + 'px'; p.style.top = top + 'px'; p._y = window.scrollY;
+}
+document.addEventListener('pointerdown', e => { const p = $('#popMenu'); if (p && !p.hidden && !p.contains(e.target) && !e.target.closest('[data-act=rowMenu],[data-act=secMenu],[data-act=bulkMenu]')) closePop(); });
+window.addEventListener('scroll', () => { const p = $('#popMenu'); if (p && !p.hidden && Math.abs(window.scrollY - (p._y || 0)) > 80) closePop(); }, {passive:true});
+
+/* ---------- drag to reorder (mouse + touch) ---------- */
+let DRAG = null;
+function dropTarget(x, y){
+  const el = document.elementFromPoint(x, y); if (!el) return null;
+  const row = el.closest('#exBody tr.line, #exBody tr.sec, #exBody tr.addrow'); if (!row || row.classList.contains('gone')) return null;
+  const si = +row.dataset.si, r = row.getBoundingClientRect();
+  if (row.classList.contains('sec')) return {si, ti: 0, y: r.bottom};
+  if (row.classList.contains('addrow')) return {si, ti: CUR.sections[si].items.length, y: r.top};
+  const ii = +row.dataset.ii, after = y > r.top + r.height / 2;
+  return {si, ti: after ? ii + 1 : ii, y: after ? r.bottom : r.top};
+}
+document.addEventListener('pointerdown', e => {
+  const h = e.target.closest('[data-drag]'); if (!h || !CUR) return;
+  const tr = h.closest('tr.line'); if (!tr) return;
+  e.preventDefault(); closePop();
+  try{ h.setPointerCapture(e.pointerId); }catch(err){}
+  DRAG = {si: +tr.dataset.si, ii: +tr.dataset.ii, tr, target: null, y: e.clientY};
+  tr.classList.add('dragging'); document.body.classList.add('is-dragging');
+  const hb = () => (document.querySelector('header.app')?.getBoundingClientRect().bottom || 0);
+  DRAG.scroll = setInterval(() => { if (!DRAG) return; const top = hb() + 60, m = 70; if (DRAG.y < top) window.scrollBy(0, -Math.min(24, 6 + (top - DRAG.y) / 4)); else if (DRAG.y > window.innerHeight - m) window.scrollBy(0, 14); }, 30);
+});
+document.addEventListener('pointermove', e => {
+  if (!DRAG) return; e.preventDefault(); DRAG.y = e.clientY;
+  const t = dropTarget(e.clientX, e.clientY), line = $('#dropLine');
+  DRAG.target = t;
+  if (!t){ line.hidden = true; return; }
+  const tb = $('#exBody').getBoundingClientRect();
+  line.hidden = false; line.style.top = (t.y - 2) + 'px'; line.style.left = tb.left + 'px'; line.style.width = tb.width + 'px';
+}, {passive:false});
+function endDrag(commit){
+  if (!DRAG) return;
+  clearInterval(DRAG.scroll); $('#dropLine').hidden = true;
+  DRAG.tr.classList.remove('dragging'); document.body.classList.remove('is-dragging');
+  const d = DRAG; DRAG = null;
+  if (commit && d.target && !(d.target.si === d.si && (d.target.ti === d.ii || d.target.ti === d.ii + 1))){ moveItem(d.si, d.ii, d.target.si, d.target.ti); rerenderEx(); }
+}
+document.addEventListener('pointerup', () => endDrag(true));
+document.addEventListener('pointercancel', () => endDrag(false));
+
+/* ---------- editing inputs ---------- */
 document.addEventListener('input', e => {
   const el = e.target;
   if (!CUR) return;
+  if (el.dataset.sf){ const s = CUR.sections[+el.dataset.si]; s.t = el.value;
+    if (!s.added){ const ch = s.t !== s.t0; el.classList.toggle('renamed', ch); const w = document.querySelector(`[data-was="t-${el.dataset.si}"]`); if (w) w.textContent = ch ? `was “${s.t0}”` : ''; }
+    saveExtracts(); return; }
   if (el.dataset.f){
     const it = CUR.sections[+el.dataset.si].items[+el.dataset.ii], f = el.dataset.f;
-    if (f === 'desc' || f === 'unit') { it[f] = el.value; saveExtracts(); return; }
+    if (f === 'desc' || f === 'unit'){ it[f] = el.value;
+      if (!it.added){ const ch = f === 'desc' ? descChanged(it) : unitChanged(it), o = f === 'desc' ? it.desc0 : it.unit0; el.classList.toggle('renamed', ch);
+        const w = document.querySelector(`[data-was="${f}-${el.dataset.si}-${el.dataset.ii}"]`); if (w) w.textContent = ch ? (f === 'desc' ? `was “${o}”` : `was ${o}`) : '';
+        const u = document.querySelector(`[data-undo="${el.dataset.si}-${el.dataset.ii}"]`); if (u && ch) u.style.visibility = ''; }
+      saveExtracts(); return; }
     it[f] = el.value === '' ? 0 : +el.value;
     if (!it.added){
-      const si = el.dataset.si, ii = el.dataset.ii, ch = num(it[f]) !== it[f+'0'];
+      const si = el.dataset.si, ii = el.dataset.ii, ch = num(it[f]) !== num(it[f+'0']);
       el.classList.toggle('changed', ch);
-      const w = document.querySelector(`[data-was="${f}-${si}-${ii}"]`); if (w) w.textContent = ch ? 'was ' + (f === 'qty' ? fq(it.qty0) : f0(it.rate0)) : '';
-      const u = document.querySelector(`[data-undo="${si}-${ii}"]`); if (u) u.style.visibility = isAdj(it) ? '' : 'hidden';
+      const w = document.querySelector(`[data-was="${f}-${si}-${ii}"]`); if (w) w.textContent = ch ? 'was ' + (f === 'qty' ? fq(num(it.qty0)) : f0(num(it.rate0))) : '';
+      const u = document.querySelector(`[data-undo="${si}-${ii}"]`); if (u && (ch || isAdj(it) || isRenamed(it))) u.style.visibility = '';
     }
     saveExtracts(); updateExNumbers();
   } else if (el.dataset.ex){
@@ -758,16 +1255,90 @@ document.addEventListener('change', e => {
     printOpts[el.dataset.opt] = el.type === 'checkbox' ? el.checked : el.value; savePO();
     if (el.dataset.opt === 'content' && $('#outBtns')) $('#outBtns').innerHTML = outButtons();
   }
+  if (el.id === 'stdSel') updateStdInfo();
+  if (CUR && el.dataset.ex === 'name'){ const v = el.value.trim() || defaultExName(); CUR.name = uniqueName(v, CUR.id); el.value = CUR.name; saveExtracts(true); }
+  if (CUR && (el.dataset.sf || el.dataset.f)) updateDiffLine();
 });
+
+/* ---------- history dialog ---------- */
+function renderHistory(){
+  const ex = CUR, list = ex.snapshots || [];
+  $('#histList').innerHTML = list.length ? list.map((s, i) => {
+    let tot = '';
+    try{ const d = JSON.parse(s.js); tot = naira(totals(exView(d), d.fee, d.cont).grand); }catch(e){}
+    return `<div class="hist-item"><div><b>${esc(s.label)}</b><div class="muted" style="font-size:12.5px">${esc(when(s.at))} · ${tot}</div></div>
+      <button class="btn small" data-act="restoreSnap" data-i="${i}">Restore</button><button class="btn small danger" data-act="delSnap" data-i="${i}">&#10005;</button></div>`;
+  }).join('') : '<p class="muted">No snapshots yet.</p>';
+  const c = $('#snapCount'); if (c) c.textContent = list.length;
+}
+
+/* ---------- actions for extracts ---------- */
+function exAction(a, b, e){
+  const si = b.dataset.si !== undefined ? +b.dataset.si : null, ii = b.dataset.ii !== undefined ? +b.dataset.ii : null;
+  switch (a){
+    case 'extract': { const ex = makeExtract(); showTab('extracts'); openExtract(ex.id); toast('Extract created and saved'); return true; }
+    case 'openEx': openExtract(b.dataset.id); return true;
+    case 'renameEx': { const ex = EX.find(x => x.id === b.dataset.id); const v = prompt('Rename extract', ex.name); if (v && v.trim()){ ex.name = uniqueName(v.trim(), ex.id); ex.updated = nowISO(); saveExtracts(true); renderExList(); } return true; }
+    case 'dupEx': { const src = EX.find(x => x.id === b.dataset.id); const c = clone(src); c.id = uid(); c.name = uniqueName(src.name + ' (copy)'); c.created = c.updated = nowISO(); c.snapshots = []; EX.unshift(c); saveExtracts(true); renderExList(); return true; }
+    case 'delEx': if (confirm('Delete this extract and all its snapshots? This cannot be undone.')){ EX = EX.filter(x => x.id !== b.dataset.id); saveExtracts(true); renderExList(); } return true;
+    case 'backEx': closeExtract(); return true;
+    case 'applyStd': applyStdToCurrent(); return true;
+    case 'snapNow': { const l = prompt('Snapshot name', 'Manual snapshot ' + when(nowISO())); if (l === null) return true; if (snapshot(CUR, l.trim() || 'Manual snapshot')) toast('Snapshot saved'); else toast('No changes since the last snapshot'); renderHistory(); return true; }
+    case 'history': renderHistory(); $('#histDlg').showModal(); return true;
+    case 'histClose': $('#histDlg').close(); return true;
+    case 'restoreSnap': { const snap = CUR.snapshots[+b.dataset.i]; if (confirm(`Restore “${snap.label}” from ${when(snap.at)}? Your current version is saved as a snapshot first.`)){ restoreSnapshot(CUR, snap); $('#histDlg').close(); renderExEditor(); toast('Snapshot restored'); } return true; }
+    case 'delSnap': CUR.snapshots.splice(+b.dataset.i, 1); saveExtracts(true); renderHistory(); return true;
+    case 'bulkMenu':
+      openPop(b, [['bulk','Restore all quantities',{k:'qty'}], ['bulk','Restore all rates',{k:'rate'}], ['bulk','Restore all names, units & titles',{k:'names'}],
+        ['bulk','Restore row & section order',{k:'order'}], '-', ['bulk','Bring back all removed rows & sections',{k:'removed'}], ['bulk','Delete all added rows & sections',{k:'added'}], '-',
+        ['bulk','Restore everything to default',{k:'all'},'danger']]);
+      return true;
+    case 'rowMenu': {
+      openPop(b, [['insAbove','Insert row above',{si,ii}], ['insBelow','Insert row below',{si,ii}], '-',
+        ['rowUp','Move up',{si,ii}], ['rowDown','Move down',{si,ii}], '-', ['removeRow','Remove row',{si,ii},'danger']]);
+      return true; }
+    case 'secMenu':
+      openPop(b, [['secRowTop','Add row at top',{si}], ['addRowEnd','Add row at bottom',{si}], '-',
+        ['secAbove','Insert section above',{si}], ['secBelow','Insert section below',{si}], '-',
+        ['secUp','Move section up',{si}], ['secDown','Move section down',{si}], '-',
+        ...(CUR.sections[si].added ? [] : [['secRestoreAll','Restore this whole section to default',{si}]]),
+        ['delSec','Delete section',{si},'danger']]);
+      return true;
+  }
+  closePop();
+  switch (a){
+    case 'bulk': { const k = b.dataset.k, label = {qty:'all quantities', rate:'all rates', names:'all names, units and titles', order:'the row and section order', removed:'all removed rows and sections', added:'(delete) all added rows and sections', all:'everything'}[k];
+      if (confirm(`Restore ${label} to default? A snapshot is saved first.`)) bulkRestore(k); return true; }
+    case 'insAbove': insertRow(si, ii); return true;
+    case 'insBelow': insertRow(si, ii + 1); return true;
+    case 'secRowTop': insertRow(si, 0); return true;
+    case 'addRowEnd': insertRow(si, CUR.sections[si].items.length); return true;
+    case 'rowUp': stepRow(si, ii, -1); rerenderEx(); return true;
+    case 'rowDown': stepRow(si, ii, 1); rerenderEx(); return true;
+    case 'restoreRow': restoreRow(si, ii); rerenderEx(); return true;
+    case 'removeRow': { const s = CUR.sections[si], it = s.items[ii]; if (it.added && !(it.desc || '').trim() && !num(it.rate)) s.items.splice(ii, 1); else it.removed = true; rerenderEx(); return true; }
+    case 'secAbove': insertSection(si); return true;
+    case 'secBelow': insertSection(si + 1); return true;
+    case 'addSecEnd': insertSection(CUR.sections.length); return true;
+    case 'secUp': stepSection(si, -1); rerenderEx(); return true;
+    case 'secDown': stepSection(si, 1); rerenderEx(); return true;
+    case 'restoreSecHead': restoreSecHead(si); rerenderEx(); return true;
+    case 'secRestoreAll': if (confirm(`Restore section “${CUR.sections[si].t}” to default? Added rows in it are deleted. A snapshot is saved first.`)){ snapshot(CUR, 'Before restoring a section'); restoreSectionAll(si); rerenderEx(); } return true;
+    case 'delSec': if (confirm(`Delete section “${CUR.sections[si].t}”? It stays listed so you can restore it.`)){ CUR.sections[si].removed = true; rerenderEx(); } return true;
+    case 'restoreSec': delete CUR.sections[si].removed; rerenderEx(); return true;
+  }
+  return false;
+}
+
+EX = loadExtracts();
 
 /* ===================================================== OUTPUT: shared document model */
 function docModel(ex){
-  const t = exTotals(ex), hz = printOpts.hideZero;
-  const secs = ex.sections.map((s,si) => {
+  const view = exView(ex), t = totals(view, ex.fee, ex.cont), hz = printOpts.hideZero;
+  const secs = view.map((s, i) => {
     let n = 0;
-    const lines = s.items.filter(it => !it.removed).map(it => ({...it, ref: s.k + (++n), mark: it.added || isAdj(it)}))
-      .filter(l => !hz || num(l.qty)*num(l.rate) !== 0);
-    return {...s, st: t.secTot[si], lines};
+    const lines = s.items.map(it => ({...it, ref: s.k + (++n), mark: it.added || isAdj(it)})).filter(l => !hz || num(l.qty)*num(l.rate) !== 0);
+    return {k: s.k, t: s.t, st: t.secTot[i], lines};
   }).filter(s => !hz || s.st.total !== 0);
   return {t, secs};
 }
@@ -799,6 +1370,7 @@ function summaryHTML(ex, M){
   return h;
 }
 function doPrint(part){
+  snapshot(CUR, 'Before print');
   const ex = CUR, M = docModel(ex), c = printOpts.content;
   let h = '';
   if (part === 'boq' || c === 'boq') h = boqHTML(ex, M);
@@ -905,6 +1477,7 @@ function buildPDF(ex, parts){
 }
 function doPDF(){
   if (!pdfLib()){ toast('PDF library not loaded (offline?). Use Print → Save as PDF.'); return; }
+  snapshot(CUR, 'Before PDF download');
   const ex = CUR, c = printOpts.content, base = fileBase(ex);
   if (c === 'separate'){
     buildPDF(ex, ['boq']).save(base + '_BOQ.pdf');
@@ -914,14 +1487,15 @@ function doPDF(){
   else buildPDF(ex, ['boq','summary']).save(base + '.pdf');
 }
 function doCSV(){
-  const ex = CUR, t = exTotals(ex);
+  snapshot(CUR, 'Before CSV download');
+  const ex = CUR, view = exView(ex), t = totals(view, ex.fee, ex.cont);
   const rows = [['Ref','Description','Unit','Qty','Rate','Amount']];
-  ex.sections.forEach((s,si) => { rows.push([s.k, s.t]); let n = 0;
-    s.items.forEach(it => { if (!it.removed) rows.push([s.k + (++n), it.desc, it.unit, num(it.qty), num(it.rate), num(it.qty)*num(it.rate)]); });
-    rows.push(['', 'Subtotal', '', '', '', t.secTot[si].sub]); rows.push(['', 'Fees', '', '', '', t.secTot[si].fee]); rows.push(['', 'Section total', '', '', '', t.secTot[si].total]); });
+  view.forEach((s, i) => { rows.push([s.k, s.t]); let n = 0;
+    s.items.forEach(it => rows.push([s.k + (++n), it.desc, it.unit, num(it.qty), num(it.rate), num(it.qty)*num(it.rate)]));
+    rows.push(['', 'Subtotal', '', '', '', t.secTot[i].sub]); rows.push(['', 'Fees', '', '', '', t.secTot[i].fee]); rows.push(['', 'Section total', '', '', '', t.secTot[i].total]); });
   rows.push([]); rows.push(['', 'Sum of sections', '', '', '', t.sum]); rows.push(['', 'Contingency', '', '', '', t.contAmt]); rows.push(['', 'GRAND TOTAL', '', '', '', t.grand]);
   const csv = rows.map(r => r.map(v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g,'""') + '"' : v).join(',')).join('\n');
-  download(new Blob(['﻿' + csv], {type:'text/csv'}), fileBase(ex) + '.csv');
+  download(new Blob(['\ufeff' + csv], {type:'text/csv'}), fileBase(ex) + '.csv');
 }
 function download(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
 
@@ -930,27 +1504,22 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-act],[data-tab]'); if (!b) return;
   if (b.dataset.tab){ showTab(b.dataset.tab); return; }
   const a = b.dataset.act, id = b.dataset.id;
-  if (a === 'extract'){ const ex = makeExtract(); showTab('extracts'); openExtract(ex.id); toast('Extract created'); }
-  if (a === 'openEx') openExtract(id);
-  if (a === 'dupEx'){ const src = EX.find(x => x.id === id); const c = JSON.parse(JSON.stringify(src)); c.id = uid(); c.name = src.name + ' (copy)'; c.created = new Date().toISOString(); EX.unshift(c); saveExtracts(); renderExList(); }
-  if (a === 'delEx'){ if (confirm('Delete this extract?')){ EX = EX.filter(x => x.id !== id); saveExtracts(); renderExList(); } }
-  if (a === 'backEx') closeExtract();
-  if (a === 'resetEx'){ if (confirm('Undo every change in this extract? Added rows are deleted and removed rows come back.')){ CUR.sections.forEach(s => { s.items = s.items.filter(it => !it.added); s.items.forEach(it => { it.qty = it.qty0; it.rate = it.rate0; delete it.removed; }); }); saveExtracts(); renderExBody(); renderExSummary(); } }
-  if (a === 'removeLine'){ const s = CUR.sections[+b.dataset.si], it = s.items[+b.dataset.ii]; if (it.added) s.items.splice(+b.dataset.ii, 1); else it.removed = true; saveExtracts(); renderExBody(); renderExSummary(); }
-  if (a === 'addLine'){ const s = CUR.sections[+b.dataset.si]; s.items.push({desc:'', unit:'', qty:1, rate:0, qty0:1, rate0:0, added:true}); saveExtracts(); renderExBody(); renderExSummary();
-    setTimeout(() => { const el = document.querySelector(`input[data-si="${b.dataset.si}"][data-ii="${s.items.length-1}"][data-f="desc"]`); if (el){ el.focus(); el.scrollIntoView({block:'center'}); } }, 30); }
-  if (a === 'restoreSec'){ e.preventDefault(); CUR.sections[+b.dataset.si].items.forEach(it => delete it.removed); saveExtracts(); renderExBody(); renderExSummary(); }
-  if (a === 'resetLine'){ const it = CUR.sections[+b.dataset.si].items[+b.dataset.ii]; it.qty = it.qty0; it.rate = it.rate0; saveExtracts(); renderExBody(); renderExSummary(); }
+  if (exAction(a, b, e)) return;
   if (a === 'print') doPrint(b.dataset.part);
   if (a === 'pdf') doPDF();
   if (a === 'csv') doCSV();
   if (a === 'close') $('#menuDlg').close();
   if (a === 'install' && deferredInstall){ deferredInstall.prompt(); deferredInstall.userChoice.finally(() => { deferredInstall = null; $('#installBtn').hidden = true; }); }
-  if (a === 'export'){ download(new Blob([JSON.stringify({app:'estimate-builder', version:1, exported:new Date().toISOString(), settings:S, extracts:EX}, null, 1)], {type:'application/json'}), `estimate-data-${today()}.json`); }
+  if (a === 'export'){ flushExtracts(); download(new Blob([JSON.stringify({app:'estimate-builder', version:2, exported:new Date().toISOString(), settings:S, extracts:EX}, null, 1)], {type:'application/json'}), `estimate-data-${today()}.json`); toast('Backup file downloaded'); }
   if (a === 'import') $('#importFile').click();
   if (a === 'reset'){ if (confirm('Reset inputs, rates and assumptions to the defaults? Extracts are kept.')){ S = defaultSettings(); store.set(KEY_SET, S); renderAll(); $('#menuDlg').close(); toast('Reset to defaults'); } }
 });
-$('#menuBtn').addEventListener('click', () => $('#menuDlg').showModal());
+$('#menuBtn').addEventListener('click', () => {
+  $('#menuDlg').showModal();
+  const el = $('#storageInfo');
+  if (el && navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(e => { el.textContent = `Storage used on this device: ${(e.usage/1024).toFixed(0)} KB · ${EX.length} extract${EX.length===1?'':'s'}`; }).catch(() => {});
+});
+if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 $('#importFile').addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return;
   try{
@@ -959,8 +1528,9 @@ $('#importFile').addEventListener('change', async e => {
     const fresh = defaultSettings();
     for (const g of ['inputs','assumptions','rates']) for (const k in fresh[g]) if (data.settings[g] && k in data.settings[g]) fresh[g][k] = data.settings[g][k];
     S = fresh; store.set(KEY_SET, S);
-    if (Array.isArray(data.extracts)){ const have = new Set(EX.map(x => x.id)); data.extracts.forEach(x => { if (!have.has(x.id)) EX.push(x); }); saveExtracts(); }
-    renderAll(); $('#menuDlg').close(); toast('Data imported');
+    let added = 0;
+    if (Array.isArray(data.extracts)){ const have = new Set(EX.map(x => x.id)); data.extracts.forEach(x => { if (x && !have.has(x.id)){ const m = migrateEx(x); if (m){ EX.push(m); added++; } } }); saveExtracts(true); }
+    renderAll(); $('#menuDlg').close(); toast(`Data imported (${added} new extract${added===1?'':'s'})`);
   }catch(err){ alert('Could not import: ' + err.message); }
   e.target.value = '';
 });
