@@ -175,6 +175,8 @@ tr.gone td{background:#fbf3f2;color:var(--muted)}
 .lg.chg{background:var(--edit);color:#7a5400;border:1px solid var(--edit-line)}.lg.add{background:#e3f4ea;color:#1e7b45}.lg.mov{background:#e6ecf6;color:#2c4a80}.lg.rem{background:#fde8e6;color:var(--bad)}
 .grid-2{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
 .std-card .field{border-top:0}
+.icon-btn.cv{padding:2px 6px 2px 0;font-size:15px;color:var(--navy)}
+tr.sec td.sl{white-space:nowrap;width:56px}
 /* source dialog */
 #srcDlg{max-width:1150px;width:calc(100% - 20px);height:calc(100% - 30px);max-height:none}
 #srcDlg[open]{display:flex}
@@ -299,7 +301,7 @@ tr.srcdiff td{background:var(--edit)}
     <button class="btn" data-act="close">Close</button>
   </div>
   <p class="muted" id="storageInfo" style="font-size:12px;margin:12px 0 0"></p>
-  <p class="muted" style="font-size:12px;margin:10px 0 0;border-top:1px solid var(--line);padding-top:10px">Estimate Builder v1.4 &middot; &copy; Porpos Solutions. Licensed software: use is governed by the signed Software Licence Agreement. Copying or redistribution is not permitted.</p>
+  <p class="muted" style="font-size:12px;margin:10px 0 0;border-top:1px solid var(--line);padding-top:10px">Estimate Builder v1.5 &middot; &copy; Porpos Solutions. Licensed software: use is governed by the signed Software Licence Agreement. Copying or redistribution is not permitted.</p>
   <div>
   </div>
   <input type="file" id="importFile" accept=".json,application/json" hidden>
@@ -699,7 +701,7 @@ function renderSummary(){
 /* ===================================================== EXTRACTS (v3: editable structure, change tracking, snapshots, standards) */
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 function today(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-const APP_VERSION = '1.4', FILE_FORMAT = 3;
+const APP_VERSION = '1.5', FILE_FORMAT = 3;
 const EX_VER = 2, SNAP_MAX = 20, LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const clone = x => JSON.parse(JSON.stringify(x));
 const nowISO = () => new Date().toISOString();
@@ -806,7 +808,7 @@ function diffText(d, short){
 /* ---------- applying a standard ---------- */
 function applyDelta(base, o, e, mode, isQty){
   o = num(o); e = num(e);
-  if (e === o) return base;
+  if (e === o || mode === 'default') return base;
   let v;
   if (mode === 'value') v = e;
   else if (mode === 'pct' && o !== 0) v = base * e / o;
@@ -829,14 +831,13 @@ function applyStandard(base, std, o){
   std.sections.forEach(ss => {
     if (ss.key && !ss.added){
       const f = fs[ss.key]; if (!f) return;
-      const sec = {key:ss.key, t0:f.t0, t: ss.t !== ss.t0 ? ss.t : f.t, items: []};
+      const sec = {key:ss.key, t0:f.t0, t: (o.nameMode !== 'default' && ss.t !== ss.t0) ? ss.t : f.t, items: []};
       if (ss.removed) sec.removed = true;
       ss.items.forEach(it => {
         if (it.added){ const c = clone(it); c.qty0 = c.qty; c.rate0 = c.rate; sec.items.push(c); return; }
         const b = it.id && fi[it.id]; if (!b) return;
         const n = {...b};
-        if (descChanged(it)) n.desc = it.desc;
-        if (unitChanged(it)) n.unit = it.unit;
+        if (o.nameMode !== 'default'){ if (descChanged(it)) n.desc = it.desc; if (unitChanged(it)) n.unit = it.unit; }
         n.qty = applyDelta(b.qty0, it.qty0, it.qty, o.qtyMode, true);
         n.rate = applyDelta(b.rate0, it.rate0, it.rate, o.rateMode, false);
         if (it.removed) n.removed = true;
@@ -913,7 +914,7 @@ window.addEventListener('pagehide', flushExtracts);
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushExtracts(); });
 
 /* ---------- snapshots ---------- */
-function exCore(ex){ const c = clone(ex); delete c.snapshots; delete c.source; return c; }
+function exCore(ex){ const c = clone(ex); delete c.snapshots; delete c.source; (c.sections || []).forEach(x => delete x.col); return c; }
 function snapshot(ex, label){
   const js = JSON.stringify(exCore(ex));
   ex.snapshots = ex.snapshots || [];
@@ -986,14 +987,16 @@ function renderExEditor(){
       <div class="field"><label for="stdSel">Start this extract from</label><div class="row"><select id="stdSel" class="bsel">${stdOptions(ex)}</select></div>
         <span class="src">${others ? `Lists the other ${others} saved extract${others>1?'s':''} of the same building type (${esc(btypeLabel(ex.btype))}). Picking one repeats its changes on this extract’s own default.` : `No other ${esc(btypeLabel(ex.btype))} extracts yet. Every extract you save appears here for future extracts.`}</span></div>
       <div class="grid-2" id="stdModes">
-        <div class="field"><label for="stdQty">Its quantity changes</label><div class="row"><select id="stdQty" class="bsel">
-          <option value="pct" ${bo.qtyMode!=='amt'&&bo.qtyMode!=='value'?'selected':''}>Same percentage (scales with size)</option><option value="amt" ${bo.qtyMode==='amt'?'selected':''}>Same amount</option><option value="value" ${bo.qtyMode==='value'?'selected':''}>Exact same quantity</option></select></div></div>
-        <div class="field"><label for="stdRate">Its rate changes</label><div class="row"><select id="stdRate" class="bsel">
-          <option value="amt" ${bo.rateMode!=='pct'&&bo.rateMode!=='value'?'selected':''}>Same ₦ difference</option><option value="pct" ${bo.rateMode==='pct'?'selected':''}>Same percentage</option><option value="value" ${bo.rateMode==='value'?'selected':''}>Exact same rate</option></select></div></div>
+        <div class="field"><label for="stdName">Name</label><div class="row"><select id="stdName" class="bsel">
+          <option value="same" ${bo.nameMode!=='default'?'selected':''}>Use the same naming throughout</option><option value="default" ${bo.nameMode==='default'?'selected':''}>Default names</option></select></div></div>
+        <div class="field"><label for="stdQty">Qty</label><div class="row"><select id="stdQty" class="bsel">
+          <option value="pct" ${!['value','default'].includes(bo.qtyMode)?'selected':''}>Same percentage, scaled to this input</option><option value="value" ${bo.qtyMode==='value'?'selected':''}>Exact same quantity</option><option value="default" ${bo.qtyMode==='default'?'selected':''}>Default quantity</option></select></div></div>
+        <div class="field"><label for="stdRate">Rate</label><div class="row"><select id="stdRate" class="bsel">
+          <option value="pct" ${!['value','default'].includes(bo.rateMode)?'selected':''}>Same percentage, scaled to this input</option><option value="value" ${bo.rateMode==='value'?'selected':''}>Exact same rate</option><option value="default" ${bo.rateMode==='default'?'selected':''}>Default rate</option></select></div></div>
       </div>
       <div class="field"><div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn primary" data-act="applyStd">Apply</button><span class="muted" id="stdInfo" style="font-size:13px;flex:1"></span></div></div>
     </div>
-    <div class="legend"><span class="lg chg">changed</span><span class="lg add">added</span><span class="lg mov">moved</span><span class="lg rem">removed</span>
+    <div class="legend"><span class="lg chg">changed</span><span class="lg add">added</span><span class="lg mov">moved</span><span class="lg rem">removed</span><button class="btn small" data-act="collapseAll">Collapse all</button><button class="btn small" data-act="expandAll">Expand all</button>
       <span class="muted">Each change shows the default value under it. Use &#8634; to restore one item, or <b>Restore &#9662;</b> for bulk.</span></div>
     <div class="card"><div class="scroll"><table class="ex-table"><thead><tr><th>Ref</th><th>Description</th><th>Unit</th><th class="num w-qty">Qty</th><th class="num w-rate">Rate (₦)</th><th class="num">Amount (₦)</th><th></th></tr></thead><tbody id="exBody"></tbody></table></div></div>
     <div class="card"><h3>Summary</h3><div id="exSummary"></div></div>
@@ -1018,7 +1021,7 @@ function updateStdInfo(){
   $('#stdModes').style.display = std ? '' : 'none';
   const nowTxt = bo ? `Currently based on “${bo.name}”.` : 'Currently the default.';
   $('#stdInfo').textContent = std
-    ? `${nowTxt} “${std.name}” differs from its default by: ${diffText(std.diff)}. Apply repeats those changes on this extract.`
+    ? `${nowTxt} “${std.name}” differs from its default by: ${diffText(std.diff)}. Apply copies its names, quantities and rates as set above; its added, removed and moved rows and sections are always copied.`
     : `${nowTxt} Apply resets this extract to exactly the calculated default.`;
 }
 const note = (cls, txt, attrs = '') => `<span class="was ${cls}" ${attrs}>${txt}</span>`;
@@ -1035,8 +1038,13 @@ function renderExBody(){
     const renamedSec = !s.added && s.t !== s.t0, mvS = movedSecs.has(s);
     const sNotes = [s.added ? note('add', 'Added section') : '', s.added ? '' : note('chg', renamedSec ? `was “${esc(s.t0)}”` : '', `data-was="t-${si}"`), mvS ? note('mov', `Moved — was section ${secL[s.key]}`) : ''].join('');
     const sCan = s.added || renamedSec || mvS;
-    h += `<tr class="sec ${s.added?'is-add':''}" data-si="${si}"><td class="sl">${L}</td><td colspan="5"><input class="sec-title ${s.added?'added':''} ${renamedSec?'renamed':''} ${mvS?'moved':''}" data-sf="t" data-si="${si}" value="${esc(s.t)}" placeholder="Section title" aria-label="Section title">${sNotes}</td>
+    h += `<tr class="sec ${s.added?'is-add':''}" data-si="${si}"><td class="sl"><button class="icon-btn cv" title="${s.col ? 'Expand' : 'Collapse'} section" data-act="toggleSec" data-si="${si}">${s.col ? '&#9656;' : '&#9662;'}</button>${L}</td><td colspan="5"><input class="sec-title ${s.added?'added':''} ${renamedSec?'renamed':''} ${mvS?'moved':''}" data-sf="t" data-si="${si}" value="${esc(s.t)}" placeholder="Section title" aria-label="Section title">${sNotes}</td>
       <td class="x">${sCan ? `<button class="icon-btn rs" title="${s.added ? 'Remove this added section' : 'Restore title and position'}" data-act="restoreSecHead" data-si="${si}">&#8634;</button>` : ''}<button class="icon-btn" title="Section options" data-act="secMenu" data-si="${si}">&#8943;</button></td></tr>`;
+    if (s.col){
+      const live = s.items.filter(it => !it.removed), ch = s.items.filter(it => it.removed || it.added || isAdj(it) || isRenamed(it) || movedItems.has(it)).length;
+      h += `<tr class="tot colrow" data-si="${si}"><td class="hide-sm"></td><td colspan="4"><a href="#" data-act="toggleSec" data-si="${si}">${live.length} row${live.length===1?'':'s'} hidden${ch ? ` · ${ch} changed` : ''} · show</a> &nbsp; Section total ${L}</td><td class="num" data-tot="${si}">${f0(st.total)}</td><td class="hide-sm"></td></tr>`;
+      return;
+    }
     let n = 0;
     s.items.forEach((it, ii) => {
       if (it.removed){
@@ -1087,7 +1095,7 @@ function rerenderEx(){ saveExtracts(); renderExBody(); renderExSummary(); }
 
 /* ---------- structural operations ---------- */
 function focusField(si, ii, f){ setTimeout(() => { const el = ii === null ? document.querySelector(`input[data-sf="t"][data-si="${si}"]`) : document.querySelector(`input[data-si="${si}"][data-ii="${ii}"][data-f="${f}"]`); if (el){ el.scrollIntoView({block:'center'}); el.focus(); el.select && el.select(); } }, 40); }
-function insertRow(si, ii){ CUR.sections[si].items.splice(ii, 0, newRow()); rerenderEx(); focusField(si, ii, 'desc'); }
+function insertRow(si, ii){ delete CUR.sections[si].col; CUR.sections[si].items.splice(ii, 0, newRow()); rerenderEx(); focusField(si, ii, 'desc'); }
 function moveItem(fs, fi, ts, ti){
   const item = CUR.sections[fs].items.splice(fi, 1)[0];
   if (fs === ts && ti > fi) ti--;
@@ -1178,13 +1186,13 @@ function bulkRestore(kind){
 }
 function applyStdToCurrent(){
   const id = $('#stdSel').value, std = EX.find(x => x.id === id);
-  const o = {qtyMode: $('#stdQty').value, rateMode: $('#stdRate').value};
+  const o = {nameMode: $('#stdName').value, qtyMode: $('#stdQty').value, rateMode: $('#stdRate').value};
   const d = diffOf(CUR);
   if (d.total && !confirm(`This replaces the changes in “${CUR.name}” (${diffText(d, true)}) with ${std ? `the changes from “${std.name}”` : 'the plain default'}. A snapshot is saved first. Continue?`)){ $('#stdSel').value = CUR.basedOn ? CUR.basedOn.id : ''; updateStdInfo(); return; }
   snapshot(CUR, std ? `Before applying standard “${std.name}”` : 'Before resetting to default');
   const base = baselineSections(CUR);
   CUR.sections = std ? applyStandard(base, std, o) : base;
-  CUR.basedOn = std ? {id: std.id, name: std.name, qtyMode: o.qtyMode, rateMode: o.rateMode} : null;
+  CUR.basedOn = std ? {id: std.id, name: std.name, nameMode: o.nameMode, qtyMode: o.qtyMode, rateMode: o.rateMode} : null;
   rerenderEx(); updateStdInfo();
   toast(std ? `Applied “${std.name}”` : 'Reset to default');
 }
@@ -1446,6 +1454,9 @@ function exAction(a, b, e){
     case 'secRestoreAll': if (confirm(`Restore section “${CUR.sections[si].t}” to default? Added rows in it are deleted. A snapshot is saved first.`)){ snapshot(CUR, 'Before restoring a section'); restoreSectionAll(si); rerenderEx(); } return true;
     case 'delSec': if (confirm(`Delete section “${CUR.sections[si].t}”? It stays listed so you can restore it.`)){ CUR.sections[si].removed = true; rerenderEx(); } return true;
     case 'restoreSec': delete CUR.sections[si].removed; rerenderEx(); return true;
+    case 'toggleSec': if (e) e.preventDefault(); { const x = CUR.sections[si]; if (x.col) delete x.col; else x.col = 1; } rerenderEx(); return true;
+    case 'collapseAll': CUR.sections.forEach(x => { if (!x.removed) x.col = 1; }); rerenderEx(); return true;
+    case 'expandAll': CUR.sections.forEach(x => delete x.col); rerenderEx(); return true;
   }
   return false;
 }
