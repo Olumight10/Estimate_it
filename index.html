@@ -177,6 +177,19 @@ tr.gone td{background:#fbf3f2;color:var(--muted)}
 .std-card .field{border-top:0}
 .icon-btn.cv{padding:2px 6px 2px 0;font-size:15px;color:var(--navy)}
 tr.sec td.sl{white-space:nowrap;width:56px}
+.ibtn{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid #9cb4dc;background:#eef3fb;color:#2c4a80;font:italic 700 11px/16px Georgia,serif;padding:0;cursor:pointer;vertical-align:middle}
+.ibtn:hover{background:#2c4a80;color:#fff}
+.qwrap{display:flex;gap:5px;align-items:center}.qwrap .cell-in{flex:1;min-width:0}
+.ex-table .w-qty{width:136px}
+td.nw{white-space:nowrap}
+#qtyDlg{max-width:620px}
+.qt-step{border-top:1px solid var(--line);padding:9px 0}
+.qt-h{font-weight:600;font-size:13.5px;margin-top:7px;color:var(--navy)}
+.qt-l{font-size:13.5px;margin-top:3px;overflow-wrap:anywhere}.qt-l.sub{padding-left:12px}.qt-l.b{font-weight:700;margin-top:7px}
+.qt-now{border-top:2px solid var(--ink);padding-top:9px;font-weight:700;font-size:15px}
+.feewrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.fee-in{width:78px!important;flex:none}
+tr.feerow.off td{background:#fbf3f2}
 /* source dialog */
 #srcDlg{max-width:1150px;width:calc(100% - 20px);height:calc(100% - 30px);max-height:none}
 #srcDlg[open]{display:flex}
@@ -301,7 +314,7 @@ tr.srcdiff td{background:var(--edit)}
     <button class="btn" data-act="close">Close</button>
   </div>
   <p class="muted" id="storageInfo" style="font-size:12px;margin:12px 0 0"></p>
-  <p class="muted" style="font-size:12px;margin:10px 0 0;border-top:1px solid var(--line);padding-top:10px">Estimate Builder v1.5 &middot; &copy; Porpos Solutions. Licensed software: use is governed by the signed Software Licence Agreement. Copying or redistribution is not permitted.</p>
+  <p class="muted" style="font-size:12px;margin:10px 0 0;border-top:1px solid var(--line);padding-top:10px">Estimate Builder v1.8 &middot; &copy; Porpos Solutions. Licensed software: use is governed by the signed Software Licence Agreement. Copying or redistribution is not permitted.</p>
   <div>
   </div>
   <input type="file" id="importFile" accept=".json,application/json" hidden>
@@ -315,6 +328,11 @@ tr.srcdiff td{background:var(--edit)}
   <div class="src-foot" id="srcFoot"></div>
 </div></dialog>
 <div id="dropLine" hidden></div>
+<dialog id="qtyDlg"><div class="dlg">
+  <h3 id="qtTitle" style="margin-bottom:2px"></h3><p class="muted" id="qtSub" style="margin:0 0 10px;font-size:13px"></p>
+  <div id="qtBody"></div>
+  <div class="actions"><button class="btn" data-act="qtClose">Close</button></div>
+</div></dialog>
 <dialog id="histDlg"><div class="dlg">
   <h3>Snapshot history</h3>
   <p class="muted" style="margin:0 0 10px;font-size:13.5px">Saved automatically when you open the extract and before every download or print. Up to 20 are kept.</p>
@@ -416,7 +434,7 @@ function compute(I, A, st, LT){
     T[k].conc.push({label:'Blockwork', how:'mortar for blockwork', vol:0, chip:0, grav:0, sand, cem, blk,
       w:{vol:'', chip:'', grav:'', blk:`${C} courses × ${A.bk_m} blocks/m × ${L} m = ${f0(blk)} blocks`, sand:`${f0(blk)} blocks ÷ ${A.bk_trip} blocks/trip = ${f2(sand)} trips`, cem:`${f2(sand)} trips × ${A.bk_ce} bags/trip = ${f2(cem)} bags`}}); };
   const tot = k => { const t={vol:0,chip:0,grav:0,sand:0,cem:0,blk:0}; T[k].conc.forEach(r=>{for(const f in t) t[f]+=r[f];}); T[k].tot=t; for(const f in t) q[k+'_'+f]=t[f]; };
-  const Q = (k,key,label,how,val,unit) => { q[key]=val; T[k].qty.push({label,how,val,unit}); };
+  const Q = (k,key,label,how,val,unit,deps) => { q[key]=val; T[k].qty.push({key,label,how,val,unit,deps:deps||[]}); };
 
   sec('GEN','GENERAL');
   Q('GEN','GFA','Gross floor area',`${I.B_A} m2 footprint + ${decks} m2 ${deckTxt}`, I.B_A + decks, 'm2');
@@ -433,8 +451,8 @@ function compute(I, A, st, LT){
   Q('B','B_r16','16mm rods',`${A.rB16} per column × ${I.B_N}`, A.rB16*I.B_N,'length');
   Q('B','B_r12','12mm rods',`${A.rB12} per column × ${I.B_N}`, A.rB12*I.B_N,'length');
   Q('B','B_r8','8mm stirrups',`${A.rB8} per column × ${I.B_N}`, A.rB8*I.B_N,'length');
-  Q('B','B_nail','Nails',`2 × ${fq(q.B_tim)} timber lengths ÷ ${A.nail}`, 2*q.B_tim/A.nail,'bag');
-  Q('B','B_wire','Binding wire',`rod lengths ÷ ${A.wire}`, (q.B_r16+q.B_r12+q.B_r8)/A.wire,'roll');
+  Q('B','B_nail','Nails',`2 × ${fq(q.B_tim)} timber lengths ÷ ${A.nail}`, 2*q.B_tim/A.nail,'bag',['B_tim']);
+  Q('B','B_wire','Binding wire',`${fq((q.B_r16+q.B_r12+q.B_r8))} rod lengths ÷ ${A.wire}`, (q.B_r16+q.B_r12+q.B_r8)/A.wire,'roll',['B_r16','B_r12','B_r8']);
 
   const floor = (P,title,with16) => {
     const N=I[P+'_N'], O=I[P+'_O'];
@@ -450,8 +468,8 @@ function compute(I, A, st, LT){
     Q(P,P+'_r6','6mm rods',`${A.rF6} per opening × ${O}`, A.rF6*O,'length');
     rods.push(P+'_r12',P+'_r8',P+'_r10',P+'_r6');
     Q(P,P+'_tim','Timber, each size',`${A.tF} × (${N} columns + ${O} openings)`, A.tF*(N+O),'length');
-    Q(P,P+'_nail','Nails',`2 × timber lengths ÷ ${A.nail}`, 2*q[P+'_tim']/A.nail,'bag');
-    Q(P,P+'_wire','Binding wire',`rod lengths ÷ ${A.wire}`, rods.reduce((s,k)=>s+q[k],0)/A.wire,'roll');
+    Q(P,P+'_nail','Nails',`2 × ${fq(q[P+'_tim'])} timber lengths ÷ ${A.nail}`, 2*q[P+'_tim']/A.nail,'bag',[P+'_tim']);
+    Q(P,P+'_wire','Binding wire',`${fq(rods.reduce((s,k)=>s+q[k],0))} rod lengths ÷ ${A.wire}`, rods.reduce((s,k)=>s+q[k],0)/A.wire,'roll',rods);
     Q(P,P+'_co','Columns + openings (labour)',`${N} + ${O}`, N+O,'No.');
   };
   floor('C',`${LT.C}. GROUND FLOOR BLOCKWORK`,true);
@@ -468,8 +486,8 @@ function compute(I, A, st, LT){
     Q(P,P+'_t23','2"x3"x12\' timber',`${A.d23} per m2 × ${DA}`, A.d23*DA,'length');
     Q(P,P+'_t112','1"x12"x12\' planks',`${A.dpl} per m2 × ${DA}`, A.dpl*DA,'length');
     Q(P,P+'_bam','Bamboo props',`${A.dbam} per m2 × ${DA}`, A.dbam*DA,'No.');
-    Q(P,P+'_nail','Nails',`timber lengths ÷ ${A.nail}`, (q[P+'_t23']+q[P+'_t112'])/A.nail,'bag');
-    Q(P,P+'_wire','Binding wire',`rod lengths ÷ ${A.wire}`, (q[P+'_r16']+q[P+'_r12']+q[P+'_r10']+q[P+'_r8'])/A.wire,'roll');
+    Q(P,P+'_nail','Nails',`${fq(q[P+'_t23']+q[P+'_t112'])} timber lengths ÷ ${A.nail}`, (q[P+'_t23']+q[P+'_t112'])/A.nail,'bag',[P+'_t23',P+'_t112']);
+    Q(P,P+'_wire','Binding wire',`${fq((q[P+'_r16']+q[P+'_r12']+q[P+'_r10']+q[P+'_r8']))} rod lengths ÷ ${A.wire}`, (q[P+'_r16']+q[P+'_r12']+q[P+'_r10']+q[P+'_r8'])/A.wire,'roll',[P+'_r16',P+'_r12',P+'_r10',P+'_r8']);
   };
   if (st >= 1){ deck('D', `${LT.D}. FIRST DECK & STAIRS`); floor('E', `${LT.E}. FIRST FLOOR BLOCKWORK`, false); }
   if (st >= 2){ deck('D2', `${LT.D2}. SECOND DECK & STAIRS`); floor('E2', `${LT.E2}. SECOND FLOOR BLOCKWORK`, false); }
@@ -496,18 +514,18 @@ function compute(I, A, st, LT){
 
   sec('H',`${LT.H}. PLASTERING  |  ${LT.K}. PAINTING`);
   Q('H','H_A','Plaster area',`${I.H_W} m2 walls + ${decks} m2 deck soffit`, I.H_W + decks,'m2');
-  Q('H','H_ce','Cement',`plaster area × ${A.pl_ce}`, q.H_A*A.pl_ce,'bag');
-  Q('H','H_sa','Plaster sand',`plaster area × ${A.pl_sa}`, q.H_A*A.pl_sa,'trip');
-  Q('H','K_pt','Paint',`plaster area × ${A.pt_dr}`, q.H_A*A.pt_dr,'drum');
+  Q('H','H_ce','Cement',`${fq(q.H_A)} m2 plaster area × ${A.pl_ce}`, q.H_A*A.pl_ce,'bag',['H_A']);
+  Q('H','H_sa','Plaster sand',`${fq(q.H_A)} m2 plaster area × ${A.pl_sa}`, q.H_A*A.pl_sa,'trip',['H_A']);
+  Q('H','K_pt','Paint',`${fq(q.H_A)} m2 plaster area × ${A.pt_dr}`, q.H_A*A.pt_dr,'drum',['H_A']);
 
   sec('I',`${LT.I}. TILING`);
   Q('I','I_fl','Floor area tiled',`${I.B_A} footprint + ${decks} ${deckTxt} − ${I.I_PVC} PVC`, I.B_A + decks - I.I_PVC,'m2');
   Q('I','I_wl','Wall area tiled',`${I.I_KW} kitchen + ${I.I_TW} toilet`, I.I_KW + I.I_TW,'m2');
-  Q('I','I_A','Total area tiled','floor + wall', q.I_fl + q.I_wl,'m2');
-  Q('I','I_ft','Floor tiles to order',`floor area + ${pct(A.tl_w)} waste`, q.I_fl*(1+A.tl_w),'m2');
-  Q('I','I_wt','Wall tiles to order',`wall area + ${pct(A.tl_w)} waste`, q.I_wl*(1+A.tl_w),'m2');
-  Q('I','I_ce','Cement',`area tiled × ${A.tl_ce}`, q.I_A*A.tl_ce,'bag');
-  Q('I','I_sa','Sharp sand',`area tiled × ${A.tl_sa}`, q.I_A*A.tl_sa,'trip');
+  Q('I','I_A','Total area tiled',`${fq(q.I_fl)} floor + ${fq(q.I_wl)} wall`, q.I_fl + q.I_wl,'m2',['I_fl','I_wl']);
+  Q('I','I_ft','Floor tiles to order',`floor area + ${pct(A.tl_w)} waste`, q.I_fl*(1+A.tl_w),'m2',['I_fl']);
+  Q('I','I_wt','Wall tiles to order',`wall area + ${pct(A.tl_w)} waste`, q.I_wl*(1+A.tl_w),'m2',['I_wl']);
+  Q('I','I_ce','Cement',`${fq(q.I_A)} m2 tiled × ${A.tl_ce}`, q.I_A*A.tl_ce,'bag',['I_A']);
+  Q('I','I_sa','Sharp sand',`${fq(q.I_A)} m2 tiled × ${A.tl_sa}`, q.I_A*A.tl_sa,'trip',['I_A']);
   return {q, T};
 }
 
@@ -532,9 +550,10 @@ function totals(sections, fee, cont){
   let sum = 0, sumSub = 0, sumFee = 0;
   const secTot = sections.map(s => {
     const sub = s.items.reduce((a,it) => it.removed ? a : a + num(it.qty)*num(it.rate), 0);
-    const f = Math.round(sub*num(fee));
+    const rate = s.noFee ? 0 : (s.fee !== undefined && s.fee !== null ? num(s.fee) : num(fee));
+    const f = Math.round(sub*rate);
     const total = sub + f; sum += total; sumSub += sub; sumFee += f;
-    return {k:s.k, t:s.t, sub, fee:f, total};
+    return {k:s.k, t:s.t, sub, fee:f, total, feeRate: rate, noFee: !!s.noFee, ownFee: !s.noFee && s.fee !== undefined && s.fee !== null};
   });
   const contAmt = Math.round(sum*num(cont));
   return {secTot, sum, sumSub, sumFee, contAmt, grand: sum + contAmt};
@@ -673,7 +692,7 @@ function renderBOQ(L, sel){
   L.sections.forEach((s,i) => {
     const t = L.secTot[i];
     h += `<tr class="sec"><td>${s.k}</td><td colspan="6">${esc(s.t)}</td></tr>`;
-    s.items.forEach(it => h += `<tr><td class="muted">${it.ref}</td><td>${esc(it.desc)}<span class="code"> ${esc(it.code)}</span></td><td class="hide-sm muted">${esc(it.unit)}</td><td class="num hide-sm muted">${f2(it.calc)}</td><td class="num">${f0(it.qty)}</td><td class="num">${f0(it.rate)}</td><td class="num">${f0(it.qty*it.rate)}</td></tr>`);
+    s.items.forEach((it,bi) => h += `<tr><td class="muted">${it.ref}</td><td>${esc(it.desc)}<span class="code"> ${esc(it.code)}</span></td><td class="hide-sm muted">${esc(it.unit)}</td><td class="num hide-sm muted">${f2(it.calc)}</td><td class="num nw">${f0(it.qty)} <button class="ibtn" title="How this quantity was arrived at" data-act="qtyInfo" data-bs="${i}" data-bi="${bi}" ${sel ? 'data-srcv="1"' : ''}>i</button></td><td class="num">${f0(it.rate)}</td><td class="num">${f0(it.qty*it.rate)}</td></tr>`);
     h += `<tr class="sub"><td></td><td colspan="5">Subtotal</td><td class="num">${f0(t.sub)}</td></tr>
           <tr><td></td><td colspan="5">Arch/Engr/Mgt fees (${pct(L.I.fee)})</td><td class="num">${f0(t.fee)}</td></tr>
           <tr class="tot"><td></td><td colspan="5">Section total</td><td class="num">${f0(t.total)}</td></tr>`;
@@ -701,13 +720,13 @@ function renderSummary(){
 /* ===================================================== EXTRACTS (v3: editable structure, change tracking, snapshots, standards) */
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 function today(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-const APP_VERSION = '1.5', FILE_FORMAT = 3;
+const APP_VERSION = '1.8', FILE_FORMAT = 3;
 const EX_VER = 2, SNAP_MAX = 20, LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const clone = x => JSON.parse(JSON.stringify(x));
 const nowISO = () => new Date().toISOString();
 const when = iso => { try{ return new Date(iso).toLocaleString('en-NG',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ return iso || ''; } };
 const btypeLabel = b => (BTYPES[b] || {}).label || 'Unknown type';
-const newRow = () => ({desc:'', unit:'', qty:1, rate:0, qty0:1, rate0:0, added:true});
+const newRow = () => ({desc:'', unit:'', qty:1, rate:0, qty0:1, rate0:0, added:true, log:[{at:new Date().toISOString(), to:1, why:'Row added by hand'}]});
 const letterAt = i => LETTERS[i] || ('S' + (i + 1));
 
 /* position of every calculated line and section in the default BOQ order */
@@ -717,7 +736,7 @@ const idSec = it => (it.id || '').split('|')[0];
 
 /* ---------- views & totals ---------- */
 const visSecs = ex => ex.sections.filter(s => !s.removed);
-function exView(ex){ return visSecs(ex).map((s,i) => ({k: letterAt(i), t: s.t, src: s, items: s.items.filter(it => !it.removed)})); }
+function exView(ex){ return visSecs(ex).map((s,i) => ({k: letterAt(i), t: s.t, src: s, fee: s.fee, noFee: s.noFee, items: s.items.filter(it => !it.removed)})); }
 function exTotals(ex){ return totals(exView(ex), ex.fee, ex.cont); }
 const isAdj = it => !it.added && (num(it.qty) !== num(it.qty0) || num(it.rate) !== num(it.rate0));
 const descChanged = it => !it.added && (it.desc ?? '') !== (it.desc0 ?? it.desc);
@@ -773,11 +792,12 @@ function computeMoves(ex){
 
 /* ---------- difference from the default (what makes an extract a "standard") ---------- */
 function diffOf(ex){
-  const d = {qty:0, rate:0, renamed:0, addedRows:0, removedRows:0, addedSecs:0, removedSecs:0, renamedSecs:0, moved:0};
+  const d = {fees:0, qty:0, rate:0, renamed:0, addedRows:0, removedRows:0, addedSecs:0, removedSecs:0, renamedSecs:0, moved:0};
   const orig = [];
   ex.sections.forEach(s => {
     if (s.added){ if (!s.removed) d.addedSecs++; }
     else { if (s.removed) d.removedSecs++; if (s.t !== s.t0) d.renamedSecs++; }
+    if (!s.removed && (s.noFee || (s.fee !== undefined && s.fee !== null))) d.fees++;
     s.items.forEach(it => {
       if (it.added){ if (!it.removed && !s.removed) d.addedRows++; return; }
       orig.push({qty: it.qty0, rate: it.rate0});
@@ -789,7 +809,7 @@ function diffOf(ex){
   });
   const mv = computeMoves(ex); d.moved = mv.movedItems.size + mv.movedSecs.size;
   d.origGrand = totals([{k:'', t:'', items: orig}], ex.fee, ex.cont).grand; d.grand = exTotals(ex).grand;
-  d.total = d.qty + d.rate + d.renamed + d.addedRows + d.removedRows + d.addedSecs + d.removedSecs + d.renamedSecs + d.moved;
+  d.total = d.fees + d.qty + d.rate + d.renamed + d.addedRows + d.removedRows + d.addedSecs + d.removedSecs + d.renamedSecs + d.moved;
   return d;
 }
 function diffText(d, short){
@@ -798,7 +818,7 @@ function diffText(d, short){
   add(d.qty, 'quantity changed', 'quantities changed'); add(d.rate, 'rate changed', 'rates changed');
   add(d.renamed, 'row renamed', 'rows renamed'); add(d.addedRows, 'row added', 'rows added'); add(d.removedRows, 'row removed', 'rows removed');
   add(d.moved, 'item moved', 'items moved'); add(d.addedSecs, 'section added', 'sections added'); add(d.removedSecs, 'section deleted', 'sections deleted');
-  add(d.renamedSecs, 'section renamed', 'sections renamed');
+  add(d.renamedSecs, 'section renamed', 'sections renamed'); add(d.fees, 'section fee changed', 'section fees changed');
   if (!p.length) return 'same as default';
   const money = d.grand - d.origGrand;
   const m = Math.abs(money) >= 1 ? ` (${money > 0 ? '+' : '−'}${naira(Math.abs(money))} vs default)` : '';
@@ -833,8 +853,9 @@ function applyStandard(base, std, o){
       const f = fs[ss.key]; if (!f) return;
       const sec = {key:ss.key, t0:f.t0, t: (o.nameMode !== 'default' && ss.t !== ss.t0) ? ss.t : f.t, items: []};
       if (ss.removed) sec.removed = true;
+      if (ss.noFee) sec.noFee = true; else if (ss.fee !== undefined && ss.fee !== null) sec.fee = ss.fee;
       ss.items.forEach(it => {
-        if (it.added){ const c = clone(it); c.qty0 = c.qty; c.rate0 = c.rate; sec.items.push(c); return; }
+        if (it.added){ const c = clone(it); c.qty0 = c.qty; c.rate0 = c.rate; c.log = [{at:new Date().toISOString(), to:c.qty, why:`Row copied from standard “${std.name}”`}]; sec.items.push(c); return; }
         const b = it.id && fi[it.id]; if (!b) return;
         const n = {...b};
         if (o.nameMode !== 'default'){ if (descChanged(it)) n.desc = it.desc; if (unitChanged(it)) n.unit = it.unit; }
@@ -846,7 +867,7 @@ function applyStandard(base, std, o){
       f.items.forEach(b => { if (!stdIds.has(b.id)) sec.items.push({...b}); });
       out.push(sec);
     } else if (ss.added){
-      const c = clone(ss); c.items.forEach(it => { it.qty0 = it.qty; it.rate0 = it.rate; }); out.push(c);
+      const c = clone(ss); c.items.forEach(it => { it.qty0 = it.qty; it.rate0 = it.rate; it.log = [{at:new Date().toISOString(), to:it.qty, why:`Row copied from standard “${std.name}”`}]; }); out.push(c);
     }
   });
   base.forEach(s => { if (!stdSecs.has(s.key)){ const at = out.findIndex(x => x.key && !x.added && DEF_SEC_INDEX[x.key] > DEF_SEC_INDEX[s.key]); at < 0 ? out.push(s) : out.splice(at, 0, s); } });
@@ -988,11 +1009,11 @@ function renderExEditor(){
         <span class="src">${others ? `Lists the other ${others} saved extract${others>1?'s':''} of the same building type (${esc(btypeLabel(ex.btype))}). Picking one repeats its changes on this extract’s own default.` : `No other ${esc(btypeLabel(ex.btype))} extracts yet. Every extract you save appears here for future extracts.`}</span></div>
       <div class="grid-2" id="stdModes">
         <div class="field"><label for="stdName">Name</label><div class="row"><select id="stdName" class="bsel">
-          <option value="same" ${bo.nameMode!=='default'?'selected':''}>Use the same naming throughout</option><option value="default" ${bo.nameMode==='default'?'selected':''}>Default names</option></select></div></div>
+          <option value="default" ${bo.nameMode!=='same'?'selected':''}>Default names</option><option value="same" ${bo.nameMode==='same'?'selected':''}>Use the same naming throughout</option></select></div></div>
         <div class="field"><label for="stdQty">Qty</label><div class="row"><select id="stdQty" class="bsel">
-          <option value="pct" ${!['value','default'].includes(bo.qtyMode)?'selected':''}>Same percentage, scaled to this input</option><option value="value" ${bo.qtyMode==='value'?'selected':''}>Exact same quantity</option><option value="default" ${bo.qtyMode==='default'?'selected':''}>Default quantity</option></select></div></div>
+          <option value="default" ${!['pct','value'].includes(bo.qtyMode)?'selected':''}>Default quantity</option><option value="pct" ${bo.qtyMode==='pct'?'selected':''}>Same percentage, scaled to this input</option><option value="value" ${bo.qtyMode==='value'?'selected':''}>Exact same quantity</option></select></div></div>
         <div class="field"><label for="stdRate">Rate</label><div class="row"><select id="stdRate" class="bsel">
-          <option value="pct" ${!['value','default'].includes(bo.rateMode)?'selected':''}>Same percentage, scaled to this input</option><option value="value" ${bo.rateMode==='value'?'selected':''}>Exact same rate</option><option value="default" ${bo.rateMode==='default'?'selected':''}>Default rate</option></select></div></div>
+          <option value="default" ${!['pct','value'].includes(bo.rateMode)?'selected':''}>Default rate</option><option value="pct" ${bo.rateMode==='pct'?'selected':''}>Same percentage, scaled to this input</option><option value="value" ${bo.rateMode==='value'?'selected':''}>Exact same rate</option></select></div></div>
       </div>
       <div class="field"><div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn primary" data-act="applyStd">Apply</button><span class="muted" id="stdInfo" style="font-size:13px;flex:1"></span></div></div>
     </div>
@@ -1037,7 +1058,8 @@ function renderExBody(){
     const L = view[vi].k, st = t.secTot[vi]; vi++;
     const renamedSec = !s.added && s.t !== s.t0, mvS = movedSecs.has(s);
     const sNotes = [s.added ? note('add', 'Added section') : '', s.added ? '' : note('chg', renamedSec ? `was “${esc(s.t0)}”` : '', `data-was="t-${si}"`), mvS ? note('mov', `Moved — was section ${secL[s.key]}`) : ''].join('');
-    const sCan = s.added || renamedSec || mvS;
+    const feeCh = s.noFee || (s.fee !== undefined && s.fee !== null);
+    const sCan = s.added || renamedSec || mvS || feeCh;
     h += `<tr class="sec ${s.added?'is-add':''}" data-si="${si}"><td class="sl"><button class="icon-btn cv" title="${s.col ? 'Expand' : 'Collapse'} section" data-act="toggleSec" data-si="${si}">${s.col ? '&#9656;' : '&#9662;'}</button>${L}</td><td colspan="5"><input class="sec-title ${s.added?'added':''} ${renamedSec?'renamed':''} ${mvS?'moved':''}" data-sf="t" data-si="${si}" value="${esc(s.t)}" placeholder="Section title" aria-label="Section title">${sNotes}</td>
       <td class="x">${sCan ? `<button class="icon-btn rs" title="${s.added ? 'Remove this added section' : 'Restore title and position'}" data-act="restoreSecHead" data-si="${si}">&#8634;</button>` : ''}<button class="icon-btn" title="Section options" data-act="secMenu" data-si="${si}">&#8943;</button></td></tr>`;
     if (s.col){
@@ -1062,19 +1084,28 @@ function renderExBody(){
         <td class="d"><div class="dwrap"><span class="drag" data-drag title="Drag to move">&#10303;</span><span class="ref">${ref}</span><input class="cell-in txt ${cls} ${dc?'renamed':''}" type="text" placeholder="Description" data-si="${si}" data-ii="${ii}" data-f="desc" value="${esc(it.desc)}">
           ${it.added ? note('add', 'Added row') : note('chg', dc ? `was “${esc(it.desc0)}”` : '', `data-was="desc-${si}-${ii}"`)}${mv ? note('mov', `Moved — was ${refs[it.id] || ''}`) : ''}</div></td>
         <td class="u"><input class="cell-in txt ${cls} ${uc?'renamed':''}" type="text" placeholder="Unit" data-si="${si}" data-ii="${ii}" data-f="unit" value="${esc(it.unit)}">${it.added ? '' : note('chg', uc ? `was ${esc(it.unit0)}` : '', `data-was="unit-${si}-${ii}"`)}</td>
-        <td class="q w-qty"><input class="cell-in ${qc?'changed':''} ${cls}" type="number" inputmode="decimal" step="any" data-si="${si}" data-ii="${ii}" data-f="qty" value="${esc(it.qty)}">${note('chg', qc ? 'was ' + fq(num(it.qty0)) : '', `data-was="qty-${si}-${ii}"`)}</td>
+        <td class="q w-qty"><div class="qwrap"><input class="cell-in ${qc?'changed':''} ${cls}" type="number" inputmode="decimal" step="any" data-si="${si}" data-ii="${ii}" data-f="qty" value="${esc(it.qty)}"><button class="ibtn" title="How this quantity was arrived at" data-act="qtyInfo" data-si="${si}" data-ii="${ii}">i</button></div>${note('chg', qc ? 'was ' + fq(num(it.qty0)) : '', `data-was="qty-${si}-${ii}"`)}</td>
         <td class="r w-rate"><input class="cell-in ${rc?'changed':''} ${cls}" type="number" inputmode="decimal" step="any" data-si="${si}" data-ii="${ii}" data-f="rate" value="${esc(it.rate)}">${note('chg', rc ? 'was ' + f0(num(it.rate0)) : '', `data-was="rate-${si}-${ii}"`)}</td>
         <td class="a num" data-amt="${si}-${ii}">${f0(num(it.qty)*num(it.rate))}</td>
         <td class="x"><button class="icon-btn rs" title="${it.added ? 'Remove this added row' : 'Restore this row to default'}" data-act="restoreRow" data-si="${si}" data-ii="${ii}" data-undo="${si}-${ii}" style="${can?'':'visibility:hidden'}">&#8634;</button><button class="icon-btn" title="Row options" data-act="rowMenu" data-si="${si}" data-ii="${ii}">&#8943;</button></td></tr>`;
     });
     h += `<tr class="addrow" data-si="${si}"><td class="hide-sm"></td><td colspan="6"><button class="btn small" data-act="addRowEnd" data-si="${si}">+ Add row to ${L}</button></td></tr>`;
     h += `<tr class="sub"><td class="hide-sm"></td><td colspan="4">Subtotal ${L}</td><td class="num" data-sub="${si}">${f0(st.sub)}</td><td class="hide-sm"></td></tr>
-          <tr class="sub"><td class="hide-sm"></td><td colspan="4" data-feelbl>Fees (${pct(ex.fee)})</td><td class="num" data-fee="${si}">${f0(st.fee)}</td><td class="hide-sm"></td></tr>
+          ${feeRowHTML(ex, s, si, st)}
           <tr class="tot"><td class="hide-sm"></td><td colspan="4">Section total ${L}</td><td class="num" data-tot="${si}">${f0(st.total)}</td><td class="hide-sm"></td></tr>`;
   });
   h += `<tr class="addsec"><td class="hide-sm"></td><td colspan="6"><button class="btn small" data-act="addSecEnd">+ Add section</button></td></tr>`;
   $('#exBody').innerHTML = h;
   updateDiffLine();
+}
+function feeRowHTML(ex, s, si, st){
+  const own = s.fee !== undefined && s.fee !== null, def = pct(ex.fee);
+  if (s.noFee) return `<tr class="sub feerow off"><td class="hide-sm"></td><td colspan="4"><span class="gone-t">Arch/Engr/Mgt fees</span> <span class="was rem" style="display:inline">removed from this section (default ${def})</span></td><td class="num" data-fee="${si}">${f0(0)}</td><td class="x"><button class="btn small" data-act="feeOn" data-si="${si}">&#8634; Add fee back</button></td></tr>`;
+  return `<tr class="sub feerow"><td class="hide-sm"></td><td colspan="4"><div class="feewrap"><span>Arch/Engr/Mgt fees</span>
+    <input class="cell-in fee-in ${own ? 'changed' : ''}" type="number" inputmode="decimal" step="any" min="0" data-secfee="${si}" value="${r9(st.feeRate*100)}" aria-label="Fee percent for this section"><span>%</span>
+    <span class="was chg" data-was="fee-${si}" style="display:inline">${own ? `was ${def}` : ''}</span></div></td>
+    <td class="num" data-fee="${si}">${f0(st.fee)}</td>
+    <td class="x"><button class="icon-btn rs" title="Use the default fee (${def})" data-act="feeDefault" data-si="${si}" style="${own ? '' : 'visibility:hidden'}" data-feeundo="${si}">&#8634;</button><button class="icon-btn del" title="Remove the fee from this section" data-act="feeOff" data-si="${si}">&#10005;</button></td></tr>`;
 }
 function updateDiffLine(){ const el = $('#exDiff'); if (el && CUR){ CUR.diff = diffOf(CUR); el.textContent = 'Difference from default: ' + diffText(CUR.diff); } }
 function updateExNumbers(){
@@ -1144,13 +1175,13 @@ function restoreRow(si, ii){
 function restoreSecHead(si){
   const s = CUR.sections[si];
   if (s.added){ if (confirm(`Remove the added section “${s.t}” and its rows?`)) CUR.sections.splice(si, 1); return; }
-  s.t = s.t0;
+  s.t = s.t0; delete s.fee; delete s.noFee;
   if (computeMoves(CUR).movedSecs.has(s)) restoreSectionPosition(s);
 }
 function restoreSectionAll(si){
   const s = CUR.sections[si];
   if (s.added){ restoreSecHead(si); return; }
-  s.t = s.t0; delete s.removed;
+  s.t = s.t0; delete s.removed; delete s.fee; delete s.noFee;
   CUR.sections.forEach(o => o.items.slice().forEach(it => { if (!it.added && idSec(it) === s.key){ resetValues(it); restoreItemPosition(it); } }));
   s.items = s.items.filter(it => !it.added);
   s.items.sort((a, b) => (DEF_INDEX[a.id] ?? 1e9) - (DEF_INDEX[b.id] ?? 1e9));
@@ -1162,6 +1193,7 @@ function bulkRestore(kind){
   if (kind === 'all'){ CUR.sections = baselineSections(CUR); }
   else if (kind === 'qty') all.forEach(({it}) => { if (!it.added) it.qty = it.qty0; });
   else if (kind === 'rate') all.forEach(({it}) => { if (!it.added) it.rate = it.rate0; });
+  else if (kind === 'fees') CUR.sections.forEach(s => { delete s.fee; delete s.noFee; });
   else if (kind === 'names'){ all.forEach(({it}) => { if (!it.added){ it.desc = it.desc0 ?? it.desc; it.unit = it.unit0 ?? it.unit; } }); CUR.sections.forEach(s => { if (!s.added) s.t = s.t0; }); }
   else if (kind === 'removed'){ CUR.sections.forEach(s => { delete s.removed; s.items.forEach(it => delete it.removed); }); }
   else if (kind === 'added'){ CUR.sections = CUR.sections.filter(s => !s.added); CUR.sections.forEach(s => { s.items = s.items.filter(it => !it.added); }); }
@@ -1254,6 +1286,14 @@ document.addEventListener('pointercancel', () => endDrag(false));
 document.addEventListener('input', e => {
   const el = e.target;
   if (!CUR) return;
+  if (el.dataset.secfee !== undefined){ const s = CUR.sections[+el.dataset.secfee];
+    if (el.value === ''){ return; }
+    const v = num(el.value) / 100;
+    if (Math.abs(v - num(CUR.fee)) < 1e-12) delete s.fee; else s.fee = v;
+    const own = s.fee !== undefined; el.classList.toggle('changed', own);
+    const w = document.querySelector(`[data-was="fee-${el.dataset.secfee}"]`); if (w) w.textContent = own ? `was ${pct(CUR.fee)}` : '';
+    const u = document.querySelector(`[data-feeundo="${el.dataset.secfee}"]`); if (u) u.style.visibility = own ? '' : 'hidden';
+    saveExtracts(); updateExNumbers(); return; }
   if (el.dataset.sf){ const s = CUR.sections[+el.dataset.si]; s.t = el.value;
     if (!s.added){ const ch = s.t !== s.t0; el.classList.toggle('renamed', ch); const w = document.querySelector(`[data-was="t-${el.dataset.si}"]`); if (w) w.textContent = ch ? `was “${s.t0}”` : ''; }
     saveExtracts(); return; }
@@ -1276,7 +1316,7 @@ document.addEventListener('input', e => {
     const k = el.dataset.ex;
     CUR[k] = (k === 'fee' || k === 'cont') ? num(el.value)/100 : el.value;
     saveExtracts();
-    if (k === 'fee' || k === 'cont'){ updateExNumbers(); document.querySelectorAll('[data-feelbl]').forEach(c => c.textContent = `Fees (${pct(CUR.fee)})`); }
+    if (k === 'fee' || k === 'cont'){ updateExNumbers(); if (k === 'fee') document.querySelectorAll('input[data-secfee]').forEach(i => { const sec = CUR.sections[+i.dataset.secfee]; if (sec.fee === undefined && document.activeElement !== i) i.value = r9(num(CUR.fee)*100); }); }
   }
 });
 document.addEventListener('change', e => {
@@ -1393,8 +1433,85 @@ async function importData(text){
   return res;
 }
 
-/* ---------- actions for extracts ---------- */
+/* ---------- quantity trace: inputs, calculation and change history ---------- */
+function traceCalc(L, key, out, seen){
+  out = out || []; seen = seen || new Set(); if (seen.has(key)) return out; seen.add(key);
+  if (key === 'one'){ out.push({t:'Fixed quantity: 1 item (a lump-sum line)'}); return out; }
+  const m = key.match(/^(.+)_(vol|chip|grav|sand|cem|blk)$/), sec = m && L.T[m[1]];
+  if (sec && sec.tot){
+    const f = m[2], U = {vol:'m3', chip:'t', grav:'trips', sand:'trips', cem:'bags', blk:'blocks'}[f], fm = v => f === 'blk' ? f0(v) : f2(v);
+    const rows = sec.conc.filter(r => Math.abs(r[f]) > 1e-9);
+    rows.forEach(r => { out.push({h: r.label}); if (r.w.vol) out.push({t: 'Volume: ' + r.w.vol, sub:1}); if (f === 'cem' && r.w.sand && !r.w.vol){ out.push({t: r.w.blk, sub:1}); out.push({t: r.w.sand, sub:1}); } else if (f === 'sand' && !r.w.vol && r.w.blk) out.push({t: r.w.blk, sub:1}); if (f !== 'vol') out.push({t: r.w[f], sub:1}); });
+    if (rows.length > 1) out.push({t: `Total: ${rows.map(r => fm(r[f])).join(' + ')} = ${fm(sec.tot[f])} ${U}`, b:1});
+    return out;
+  }
+  let row = null; for (const k in L.T){ row = L.T[k].qty.find(r => r.key === key); if (row) break; }
+  if (row){ (row.deps || []).forEach(d => traceCalc(L, d, out, seen)); out.push({h: row.label}); out.push({t: `${row.how} = ${f2(row.val)} ${row.unit}`, sub:1}); return out; }
+  const im = DEFAULTS.Inputs.find(x => x.key === key);
+  if (im){ out.push({h: 'Input'}); out.push({t: `${im.label} (${im.group}) = ${fq(num(L.I[key]))} ${im.unit || ''}`, sub:1}); return out; }
+  out.push({t: 'No calculation recorded for this line.'}); return out;
+}
+const traceHTML = arr => arr.map(x => x.h ? `<div class="qt-h">${esc(x.h)}</div>` : `<div class="qt-l ${x.sub?'sub':''} ${x.b?'b':''}">${esc(x.t)}</div>`).join('');
+function calcBlock(L, key, unit){
+  const calc = (key in L.q) ? L.q[key] : L.I[key], qty = ceil9(calc);
+  let h = `<div class="qt-step"><b>1. Inputs and calculation</b>${traceHTML(traceCalc(L, key))}</div>`;
+  h += `<div class="qt-step"><b>2. Rounding</b><div class="qt-l sub">${Number.isInteger(r9(calc)) ? `${fq(calc)} ${esc(unit)} is already a whole number` : `${f2(calc)} ${esc(unit)} rounded up to a whole unit you can buy = ${fq(qty)} ${esc(unit)}`}</div></div>`;
+  return {h, qty};
+}
+function openQtyInfo(b){
+  let title, sub, h = '';
+  if (b.dataset.bs !== undefined){
+    const L = b.dataset.srcv ? buildLive(mergeSettings(CUR.source.settings)) : LIVE, it = L.sections[+b.dataset.bs].items[+b.dataset.bi];
+    title = `${it.ref} ${it.desc}`; sub = b.dataset.srcv ? 'As calculated from this extract’s recorded inputs' : 'Live BOQ: always calculated from the current inputs and assumptions';
+    const c = calcBlock(L, it.key, it.unit); h = c.h + `<div class="qt-now">Quantity: ${fq(c.qty)} ${esc(it.unit)}</div>`;
+  } else {
+    const ex = CUR, s = ex.sections[+b.dataset.si], it = s.items[+b.dataset.ii], unit = it.unit || '';
+    title = it.desc || 'Row'; sub = `Extract “${ex.name}”`;
+    let n = 1;
+    if (it.added) h += `<div class="qt-step"><b>1. Origin</b><div class="qt-l sub">This row was added by hand, so its quantity is typed, not calculated.</div></div>`;
+    else if (ex.source && it.id){
+      const key = it.id.split('|')[1], L = buildLive(mergeSettings(ex.source.settings)), c = calcBlock(L, key, it.unit0 ?? unit);
+      h += c.h; n = 2;
+      if (c.qty !== num(it.qty0)) h += `<div class="qt-l sub">Default quantity stored in this extract: ${fq(num(it.qty0))}</div>`;
+    } else h += `<div class="qt-step"><b>1. Inputs and calculation</b><div class="qt-l sub">The inputs for this extract were not recorded (made before v1.4). Its default quantity was ${fq(num(it.qty0))} ${esc(unit)}.</div></div>`;
+    const log = (it.log || []).filter(l => !(it.added && l.why === 'Row added by hand' && l.from === undefined) || true);
+    h += `<div class="qt-step"><b>${n + 1}. Changes in this extract</b>`;
+    if (log.length) h += log.map(l => `<div class="qt-l sub"><span class="muted">${esc(when(l.at))}</span> — ${esc(l.why)}${l.from !== undefined ? `: ${fq(num(l.from))} → <b>${fq(num(l.to))}</b>` : `: starts at <b>${fq(num(l.to))}</b>`}${l.note ? `<div class="muted" style="font-size:12px">${esc(l.note)}</div>` : ''}</div>`).join('');
+    else if (!it.added && num(it.qty) !== num(it.qty0)) h += `<div class="qt-l sub">Changed from ${fq(num(it.qty0))} to <b>${fq(num(it.qty))}</b> (before change history was kept, so the steps are not known).</div>`;
+    else h += `<div class="qt-l sub">None. It is still the default.</div>`;
+    h += `</div><div class="qt-now">Current quantity: ${fq(num(it.qty))} ${esc(unit)}${!it.added && num(it.qty) !== num(it.qty0) ? ` <span class="muted">(default ${fq(num(it.qty0))})</span>` : ''}</div>`;
+  }
+  $('#qtTitle').textContent = title; $('#qtSub').textContent = sub; $('#qtBody').innerHTML = h; $('#qtyDlg').showModal();
+}
+function qtyMap(ex){ const m = new Map(); ex.sections.forEach(s => s.items.forEach(it => { if (!it.added && it.id) m.set(it.id, num(it.qty)); })); return m; }
+function addLog(it, from, to, why, note){ (it.log = it.log || []).push({at: nowISO(), from, to, why, ...(note ? {note} : {})}); if (it.log.length > 40) it.log.splice(1, it.log.length - 40); }
+function logQtyDiff(before, a){
+  const bo = CUR.basedOn, std = a === 'applyStd' && bo ? EX.find(x => x.id === bo.id) : null, stdQ = {};
+  if (std) std.sections.forEach(s => s.items.forEach(it => { if (it.id) stdQ[it.id] = it; }));
+  const ML = {pct:'same percentage, scaled to this input', value:'exact same quantity', 'default':'default quantity'};
+  const why = a === 'applyStd' ? (bo ? `Standard “${bo.name}” applied (Qty: ${ML[bo.qtyMode] || bo.qtyMode})` : 'Reset to default from the Standard menu')
+    : a === 'restoreRow' ? 'Row restored to default' : a === 'bulk' ? 'Bulk restore' : a === 'secRestoreAll' ? 'Section restored to default' : a === 'restoreSnap' ? 'Older snapshot restored' : 'Changed';
+  let n = 0;
+  CUR.sections.forEach(s => s.items.forEach(it => { if (it.added || !it.id || !before.has(it.id)) return; const o = before.get(it.id), v = num(it.qty); if (o === v) return;
+    const si = stdQ[it.id]; let note = '';
+    if (si && bo.qtyMode === 'pct' && num(si.qty0)) note = `In the standard it went ${fq(num(si.qty0))} → ${fq(num(si.qty))} (×${(num(si.qty)/num(si.qty0)).toFixed(4).replace(/0+$/,'').replace(/\.$/,'')}); applied to this default ${fq(num(it.qty0))} and rounded.`;
+    else if (si && bo.qtyMode === 'value') note = `The standard’s own quantity is ${fq(num(si.qty))}.`;
+    addLog(it, o, v, why, note); n++; }));
+  if (n) saveExtracts();
+}
+document.addEventListener('focusin', e => { const el = e.target; if (CUR && el.dataset && el.dataset.f === 'qty'){ const it = CUR.sections[+el.dataset.si]?.items[+el.dataset.ii]; if (it) el._q0 = num(it.qty); } });
+document.addEventListener('change', e => { const el = e.target; if (CUR && el.dataset && el.dataset.f === 'qty' && el._q0 !== undefined){ const it = CUR.sections[+el.dataset.si]?.items[+el.dataset.ii]; if (it && num(it.qty) !== el._q0){ addLog(it, el._q0, num(it.qty), 'Edited by hand'); el._q0 = num(it.qty); saveExtracts(); } } });
 function exAction(a, b, e){
+  if (a === 'qtyInfo'){ openQtyInfo(b); return true; }
+  if (a === 'qtClose'){ $('#qtyDlg').close(); return true; }
+  const before = CUR ? qtyMap(CUR) : null;
+  const r = exAction0(a, b, e);
+  if (before && CUR && ['applyStd','restoreRow','bulk','secRestoreAll','restoreSnap'].includes(a)) logQtyDiff(before, a);
+  return r;
+}
+
+/* ---------- actions for extracts ---------- */
+function exAction0(a, b, e){
   const si = b.dataset.si !== undefined ? +b.dataset.si : null, ii = b.dataset.ii !== undefined ? +b.dataset.ii : null;
   switch (a){
     case 'extract': { const ex = makeExtract(); showTab('extracts'); openExtract(ex.id); toast('Extract created and saved'); return true; }
@@ -1417,7 +1534,7 @@ function exAction(a, b, e){
     case 'restoreSnap': { const snap = CUR.snapshots[+b.dataset.i]; if (confirm(`Restore “${snap.label}” from ${when(snap.at)}? Your current version is saved as a snapshot first.`)){ restoreSnapshot(CUR, snap); $('#histDlg').close(); renderExEditor(); toast('Snapshot restored'); } return true; }
     case 'delSnap': CUR.snapshots.splice(+b.dataset.i, 1); saveExtracts(true); renderHistory(); return true;
     case 'bulkMenu':
-      openPop(b, [['bulk','Restore all quantities',{k:'qty'}], ['bulk','Restore all rates',{k:'rate'}], ['bulk','Restore all names, units & titles',{k:'names'}],
+      openPop(b, [['bulk','Restore all quantities',{k:'qty'}], ['bulk','Restore all rates',{k:'rate'}], ['bulk','Restore all section fees',{k:'fees'}], ['bulk','Restore all names, units & titles',{k:'names'}],
         ['bulk','Restore row & section order',{k:'order'}], '-', ['bulk','Bring back all removed rows & sections',{k:'removed'}], ['bulk','Delete all added rows & sections',{k:'added'}], '-',
         ['bulk','Restore everything to default',{k:'all'},'danger']]);
       return true;
@@ -1435,7 +1552,7 @@ function exAction(a, b, e){
   }
   closePop();
   switch (a){
-    case 'bulk': { const k = b.dataset.k, label = {qty:'all quantities', rate:'all rates', names:'all names, units and titles', order:'the row and section order', removed:'all removed rows and sections', added:'(delete) all added rows and sections', all:'everything'}[k];
+    case 'bulk': { const k = b.dataset.k, label = {qty:'all quantities', rate:'all rates', fees:'all section fees', names:'all names, units and titles', order:'the row and section order', removed:'all removed rows and sections', added:'(delete) all added rows and sections', all:'everything'}[k];
       if (confirm(`Restore ${label} to default? A snapshot is saved first.`)) bulkRestore(k); return true; }
     case 'insAbove': insertRow(si, ii); return true;
     case 'insBelow': insertRow(si, ii + 1); return true;
@@ -1454,6 +1571,9 @@ function exAction(a, b, e){
     case 'secRestoreAll': if (confirm(`Restore section “${CUR.sections[si].t}” to default? Added rows in it are deleted. A snapshot is saved first.`)){ snapshot(CUR, 'Before restoring a section'); restoreSectionAll(si); rerenderEx(); } return true;
     case 'delSec': if (confirm(`Delete section “${CUR.sections[si].t}”? It stays listed so you can restore it.`)){ CUR.sections[si].removed = true; rerenderEx(); } return true;
     case 'restoreSec': delete CUR.sections[si].removed; rerenderEx(); return true;
+    case 'feeOff': { const x = CUR.sections[si]; x.noFee = true; delete x.fee; rerenderEx(); return true; }
+    case 'feeOn': delete CUR.sections[si].noFee; rerenderEx(); return true;
+    case 'feeDefault': { const x = CUR.sections[si]; delete x.fee; delete x.noFee; rerenderEx(); return true; }
     case 'toggleSec': if (e) e.preventDefault(); { const x = CUR.sections[si]; if (x.col) delete x.col; else x.col = 1; } rerenderEx(); return true;
     case 'collapseAll': CUR.sections.forEach(x => { if (!x.removed) x.col = 1; }); rerenderEx(); return true;
     case 'expandAll': CUR.sections.forEach(x => delete x.col); rerenderEx(); return true;
@@ -1485,7 +1605,7 @@ function boqHTML(ex, M){
   M.secs.forEach(s => {
     h += `<div class="sec-block"><table>${colgroup}${thead}<tbody><tr class="sec"><td>${s.k}</td><td colspan="5">${esc(s.t)}</td></tr>`;
     s.lines.forEach(l => h += `<tr><td>${l.ref}</td><td>${esc(l.desc)}${mk&&l.mark?' <span class="mark">*</span>':''}</td><td>${esc(l.unit)}</td><td class="num">${fq(num(l.qty))}</td><td class="num">${f0(num(l.rate))}</td><td class="num">${f0(num(l.qty)*num(l.rate))}</td></tr>`);
-    h += `<tr><td></td><td colspan="4">Subtotal</td><td class="num">${f0(s.st.sub)}</td></tr><tr><td></td><td colspan="4">Arch/Engr/Mgt fees (${pct(ex.fee)})</td><td class="num">${f0(s.st.fee)}</td></tr><tr class="tot"><td></td><td colspan="4">SECTION TOTAL</td><td class="num">${f0(s.st.total)}</td></tr></tbody></table></div>`;
+    h += `<tr><td></td><td colspan="4">Subtotal</td><td class="num">${f0(s.st.sub)}</td></tr>${s.st.noFee ? '' : `<tr><td></td><td colspan="4">Arch/Engr/Mgt fees (${pct(s.st.feeRate)})</td><td class="num">${f0(s.st.fee)}</td></tr>`}<tr class="tot"><td></td><td colspan="4">SECTION TOTAL</td><td class="num">${f0(s.st.total)}</td></tr></tbody></table></div>`;
   });
   if (mk) h += `<p style="font-size:9pt" class="mark">* adjusted or added manually</p>`;
   return h;
@@ -1532,7 +1652,7 @@ function sectionTable(doc, ex, s, startY, showHead){
   const body = [[{content:s.k, styles:{fillColor:C.band, fontStyle:'bold', textColor:C.bandText}}, {content:s.t, colSpan:5, styles:{fillColor:C.band, fontStyle:'bold', textColor:C.bandText}}]];
   s.lines.forEach(l => body.push([l.ref, (l.desc || '') + (mk && l.mark ? ' *' : ''), l.unit || '', fq(num(l.qty)), pd(num(l.rate)), pd(num(l.qty)*num(l.rate))]));
   body.push(['', {content:'Subtotal', colSpan:4}, pd(s.st.sub)]);
-  body.push(['', {content:`Arch/Engr/Mgt fees (${pct(ex.fee)})`, colSpan:4}, pd(s.st.fee)]);
+  if (!s.st.noFee) body.push(['', {content:`Arch/Engr/Mgt fees (${pct(s.st.feeRate)})`, colSpan:4}, pd(s.st.fee)]);
   body.push(['', {content:'SECTION TOTAL', colSpan:4, styles:{fontStyle:'bold'}}, {content:pd(s.st.total), styles:{fontStyle:'bold'}}]);
   doc.autoTable({
     startY, margin:{left:P.M, right:P.M, top:P.TOP, bottom:P.BOT}, showHead,
@@ -1623,7 +1743,7 @@ function doCSV(){
   const rows = [['Ref','Description','Unit','Qty','Rate','Amount']];
   view.forEach((s, i) => { rows.push([s.k, s.t]); let n = 0;
     s.items.forEach(it => rows.push([s.k + (++n), it.desc, it.unit, num(it.qty), num(it.rate), num(it.qty)*num(it.rate)]));
-    rows.push(['', 'Subtotal', '', '', '', t.secTot[i].sub]); rows.push(['', 'Fees', '', '', '', t.secTot[i].fee]); rows.push(['', 'Section total', '', '', '', t.secTot[i].total]); });
+    rows.push(['', 'Subtotal', '', '', '', t.secTot[i].sub]); rows.push(['', t.secTot[i].noFee ? 'Fees (removed)' : 'Fees (' + pct(t.secTot[i].feeRate) + ')', '', '', '', t.secTot[i].fee]); rows.push(['', 'Section total', '', '', '', t.secTot[i].total]); });
   rows.push([]); rows.push(['', 'Sum of sections', '', '', '', t.sum]); rows.push(['', 'Contingency', '', '', '', t.contAmt]); rows.push(['', 'GRAND TOTAL', '', '', '', t.grand]);
   const csv = rows.map(r => r.map(v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g,'""') + '"' : v).join(',')).join('\n');
   download(new Blob(['\ufeff' + csv], {type:'text/csv'}), fileBase(ex) + '.csv');
